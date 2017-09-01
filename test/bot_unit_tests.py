@@ -802,6 +802,7 @@ class BotUnitTests(unittest.TestCase):
         """
         def test_total_address_value(self):
             bot_api = api(config.seed)
+            bot_api.init_custom_db('test_db.db')
             used_addresses = bot_api.get_used_addresses()
             address_sum = 0
             for address in used_addresses:
