@@ -1,13 +1,18 @@
 import sqlite3
+import config
 
-conn = sqlite3.connect("botData.db")
+conn = sqlite3.connect(config.database_name)
 db = conn.cursor()
-data = db.execute("SELECT * FROM users")
-print(data.fetchall())
+data = db.execute("SELECT * FROM users").fetchall()
+print('{0} Users:'.format(len(data)))
+for entry in data:
+    print(entry)
 print("")
-data = db.execute("SELECT * FROM depositRequests")
-print(data.fetchall())
-print("")
-data = db.execute("SELECT * FROM withdrawRequests")
-print(data.fetchall())
+
+data = db.execute("SELECT * FROM depositRequests").fetchall()
+print('{0} deposit requests'.format(len(data)))
+data = db.execute("SELECT * FROM withdrawRequests").fetchall()
+print('{0} withdraw requests'.format(len(data)))
+data = db.execute("SELECT * FROM usedAddresses").fetchall()
+print('{0} used addresses'.format(len(data)))
 input("")
