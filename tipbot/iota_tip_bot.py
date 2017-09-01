@@ -23,7 +23,7 @@ reddit = praw.Reddit(
     password=config.password
 )
 
-logging.basicConfig(filename='withdrawLogs.log',format='%(levelname)s: %(asctime)s: %(message)s ',level=logging.INFO)
+logging.basicConfig(filename='transactionLogs.log',format='%(levelname)s: %(asctime)s: %(message)s ',level=logging.INFO)
 
 #Message links to be appended to every message/comment reply
 message_links = "\n\n[Deposit](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Deposit&message=Deposit iota!) | [Withdraw](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Withdraw&message=I want to withdraw my iota!\nxxx iota \naddress here) | [Balance](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Balance&message=I want to check my balance!) | [Help](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Help!&message=I need help!) | [Donate](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Donate&message=I want to support iotaTipBot!)\n"
