@@ -12,12 +12,12 @@ import json
 import math
 
 node_address = config.node_address
+address_index = 1
 
 class api:
 
 
     def __init__(self,seed,prod=True):
-        self.address_index = 1
         if prod:
             self.init_db()
         self.iota_api = Iota(
@@ -28,13 +28,13 @@ class api:
         self.conn = sqlite3.connect(config.database_name)
         self.db = self.conn.cursor()
         self.create_database()
-        self.address_index = len(self.db.execute("SELECT * FROM usedAddresses").fetchall())
+        address_index = len(self.db.execute("SELECT * FROM usedAddresses").fetchall())
         
     def init_custom_db(self,name):
         self.conn = sqlite3.connect(name)
         self.db = self.conn.cursor()
         self.create_database()
-        self.address_index = len(self.db.execute("SELECT * FROM usedAddresses").fetchall())
+        address_index = len(self.db.execute("SELECT * FROM usedAddresses").fetchall())
 
     def get_iota_value(self,amount):
         try:
@@ -64,7 +64,7 @@ class api:
         return ret
 
     def get_account_balance(self):
-        addresses = self.iota_api.get_new_addresses(0,self.address_index)['addresses']
+        addresses = self.iota_api.get_new_addresses(0,address_index)['addresses']
         balances = self.iota_api.get_balances(addresses)['balances']
         total = 0
         for balance in balances:
@@ -77,11 +77,11 @@ class api:
 
 
     def get_new_address(self):
-        addresses = self.iota_api.get_new_addresses(self.address_index,1)
+        addresses = self.iota_api.get_new_addresses(address_index,1)
         for address in addresses['addresses']:
             address = address.with_valid_checksum()
-            self.add_used_address(self.address_index,address._trytes.decode("utf-8"))
-            self.address_index = self.address_index + 1
+            self.add_used_address(address_index,address._trytes.decode("utf-8"))
+            address_index = address_index + 1
             if self.get_balance(address) > 0:
                 return self.get_new_address()
             return address
