@@ -5,10 +5,6 @@ conn = sqlite3.connect(config.database_name)
 db = conn.cursor()
 data = db.execute("SELECT * FROM users").fetchall()
 print('{0} Users:'.format(len(data)))
-for entry in data:
-    print(entry)
-print("")
-
 data = db.execute("SELECT * FROM depositRequests").fetchall()
 print('{0} deposit requests'.format(len(data)))
 data = db.execute("SELECT * FROM withdrawRequests").fetchall()
