@@ -45,7 +45,7 @@ class api:
             ],
             min_weight_magnitude=15,
             change_address = new_address,
-            inputs = self.iota_api.get_inputs(0,index),
+            inputs = self.iota_api.get_inputs(0,index,amount)['inputs'],
         )
         return ret
 
