@@ -49,6 +49,7 @@ class api:
 
     #---------IOTA API FUNCTIONS--------------#
     def send_transfer(self,addr,amount):
+        new_address = self.get_new_address()
         ret = self.iota_api.send_transfer(
             depth = 3,
             transfers = [
@@ -59,7 +60,8 @@ class api:
                     value = amount,
                 ), 
             ],
-            min_weight_magnitude=15
+            min_weight_magnitude=15,
+            change_address = new_address
         )
         return ret
 
