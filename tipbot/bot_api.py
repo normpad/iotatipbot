@@ -351,4 +351,5 @@ class Database:
 
     def get_address_index(self):
         query = self.db.execute("SELECT * FROM usedAddresses")
-        self.address_index = len(query.fetchall())
+        address_index = len(query.fetchall())
+        return address_index 
