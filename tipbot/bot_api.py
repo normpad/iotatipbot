@@ -49,6 +49,8 @@ class api:
         return ret
 
     def get_account_balance(self,index):
+        if index==0:
+            index=1
         addresses = self.iota_api.get_new_addresses(0,index)['addresses']
         balances = self.iota_api.get_balances(addresses)['balances']
         total = 0
