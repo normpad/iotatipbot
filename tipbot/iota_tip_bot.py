@@ -144,7 +144,7 @@ def monitor_comments():
                         amount = bot_api.get_iota_tip_amount(comment)
                         if bot_api.check_balance(author,amount):
                             parent_comment = comment.parent()
-                            if parent_comment is None:
+                            if parent_comment.author is None:
                                 continue
                             recipient = parent_comment.author.name
                             bot_api.subtract_balance(author,amount)
