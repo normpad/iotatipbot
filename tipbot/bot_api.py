@@ -17,7 +17,7 @@ class api:
 
 
     def __init__(self,seed,prod=True):
-        self.address_index = 1
+        self.address_index = 0
         if prod:
             self.init_db()
         self.iota_api = Iota(
