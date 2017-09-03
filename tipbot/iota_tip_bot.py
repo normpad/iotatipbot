@@ -248,10 +248,10 @@ while True:
 
                 #Check if it is a deposit request
                 if bot_api.is_deposit_request(message):
-                    transfer = {'type':'address','reddit_username':reddit_username, 'message':message,'time': time.time()}
-                    deposit_queue.put(transfer)
-                    #reply = "Deposits are currently disabled until some issues can be sorted out. Thank you for your patience."
-                    #message.reply(reply + message_links)
+                    #transfer = {'type':'address','reddit_username':reddit_username, 'message':message,'time': time.time()}
+                    #deposit_queue.put(transfer)
+                    reply = "Deposits are currently disabled until some issues can be sorted out. Thank you for your patience."
+                    message.reply(reply + message_links)
                     message.mark_read()
 
                 #Check if it is a withdraw request
