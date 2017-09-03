@@ -79,9 +79,18 @@ class api:
 
 
     def get_new_address(self):
+        self.get_address_index()
         addresses = self.iota_api.get_new_addresses(self.address_index,1)
         for address in addresses['addresses']:
             address = address.with_valid_checksum()
+
+            #Check if address or index is already in the database
+            used_addresses = self.get_used_addresses()
+            for used_address in used_addresses:
+                if used_address[0] == self.address_index:
+                    return self.get_new_address()
+                elif used_address[1] == address._trytes.decode("utf-8"):
+                    return self.get_new_address()
             self.add_used_address(self.address_index,address._trytes.decode("utf-8"))
             self.address_index = self.address_index + 1
             if self.get_balance(address) > 0:
@@ -362,3 +371,7 @@ class api:
     def get_used_addresses(self):
         query = self.db.execute("SELECT * FROM usedAddresses")
         return query.fetchall()
+
+    def get_address_index(self):
+        query = self.db.execute("SELECT * FROM usedAddresses")
+        self.address_index = len(query.fetchall())

@@ -70,6 +70,7 @@ class IotaUnitTests(unittest.TestCase):
             seed = b'SWMS9HOIE9EKPKWTBKJHTJOX9EU9NNJB9AEDWZPFOBSBQBXBFPYSRCE9SVIHRI9BJAGLSCAMMRUFSQRIJ'
             address = b'ROJLHG9AIQYLSNXZMUABJCVOMCZFILEAVNWKKK9CG9JWISIWX9VCDHCXOIYRFYVUAOAMYGFZWDQWLWHJWTXKJMSPZC'
             bot_api = api(seed,False)
+            bot_api.init_custom_db('test_db.db')
             start_time = time.time()
             try:
                 bot_api.send_transfer(address,1)
