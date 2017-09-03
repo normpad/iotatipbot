@@ -140,7 +140,7 @@ def withdraws():
             with bot_db_lock:
                 address_index = bot_db.get_address_index()
                 new_address = bot_api.get_new_address(address_index)
-                bot_db.add_used_address(address_index,new_address)
+                bot_db.add_used_address(address_index,new_address._trytes.decode("utf-8"))
             bot_api.send_transfer(address,amount,new_address)
             print("Transfer complete.")
             logging.info('{0} withdrew {1} iota to address: {2}'.format(reddit_username,amount,address.decode("utf-8")))
