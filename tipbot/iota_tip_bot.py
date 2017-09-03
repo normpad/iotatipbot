@@ -95,8 +95,7 @@ def deposits():
                 else:
                     address = deposit['address']
                     reddit_username = deposit['reddit_username']
-                    with bot_db_lock:
-                        balance = bot_db.get_balance(address)
+                    balance = bot_api.get_balance(address)
                     if balance > 0:
                         print("Transaction found, {0} transfered {1} iota".format(reddit_username,balance))
                         with bot_db_lock:
