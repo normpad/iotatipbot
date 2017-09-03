@@ -6,7 +6,7 @@ import queue
 import random
 import string
 from iota import *
-from bot_api import api
+from bot_api import api,Database
 import logging
 import config
 
@@ -28,6 +28,9 @@ logging.basicConfig(filename='transactionLogs.log',format='%(levelname)s: %(asct
 #Message links to be appended to every message/comment reply
 message_links = "\n\n[Deposit](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Deposit&message=Deposit iota!) | [Withdraw](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Withdraw&message=I want to withdraw my iota!\nxxx iota \naddress here) | [Balance](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Balance&message=I want to check my balance!) | [Help](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Help!&message=I need help!) | [Donate](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Donate&message=I want to support iotaTipBot!)\n"
 
+bot_db = Database()
+bot_db_lock = threading.Lock()
+
 #A thread to handle deposits
 #Deposits are handled in 2 phases. 
 #   Phase1: A unique 0 balance address is generated and given to the user
@@ -44,7 +47,8 @@ def deposits():
         try:
             #Check the queue for new deposits, add them to the database and local deposit list.
             new_deposit = deposit_queue.get(False)
-            bot_api.add_deposit_request(new_deposit)
+            with bot_db_lock:
+                bot_db.add_deposit_request(new_deposit)
             deposits.append(new_deposit)
             print("New deposit received: (" + new_deposit['type'] + ", " + new_deposit['reddit_username'] + ")")
         except queue.Empty:
@@ -55,14 +59,27 @@ def deposits():
             message = deposit['message']
 
             if deposit_type == 'address':
-                address = bot_api.get_new_address()
+
+                #lock the database
+                #generate the address
+                #add the address to the used addresses
+                #make sure address has 0 balance
+                with bot_db_lock:
+                    while True:
+                        address_index = bot_db.get_address_index()
+                        address = bot_api.get_new_address(address_index)
+                        bot_db.add_used_address(address_index,address._trytes.decode("utf-8"))
+                        if bot_api.get_balance(address) == 0:
+                            break
+                    
                 reply = "Please transfer your IOTA to this address:\n{0}\n\nDo not deposit to the same address more than once. This address will expire in 2 hours".format(address._trytes.decode("utf-8"))
                 logging.info('{0} was assigned to address {1}'.format(reddit_username,address._trytes.decode("utf-8")))
                 message.reply(reply + message_links)
                 
                 deposit = {'type':'deposit','reddit_username':reddit_username,'address':address,'message':message,'time':time.time()}
                 deposit_queue.put(deposit)
-                bot_api.remove_deposit_request(deposit)
+                with bot_db_lock:
+                    bot_db.remove_deposit_request(deposit)
                 del deposits[index]
 
             elif deposit_type == 'deposit':
@@ -71,19 +88,23 @@ def deposits():
                 if (time.time() - deposit_time) > 7200:
                     reply = ('Your deposit request has timed out. Please start a new deposit. Do not transfer to the previous address.')
                     message.reply(reply+message_links)
-                    bot_api.remove_deposit_request(deposit)
+                    with bot_db_lock:
+                        bot_db.remove_deposit_request(deposit)
                     logging.info('{0}\'s deposit has timed out'.format(reddit_username))
                     del deposits[index]
                 else:
                     address = deposit['address']
                     reddit_username = deposit['reddit_username']
-                    balance = bot_api.get_balance(address)
+                    with bot_db_lock:
+                        balance = bot_db.get_balance(address)
                     if balance > 0:
                         print("Transaction found, {0} transfered {1} iota".format(reddit_username,balance))
-                        bot_api.add_balance(reddit_username,balance)
+                        with bot_db_lock:
+                            bot_db.add_balance(reddit_username,balance)
                         reply = ('You have successfully funded your tipping account with {0} iota'.format(balance))
                         message.reply(reply + message_links)
-                        bot_api.remove_deposit_request(deposit)
+                        with bot_db_lock:
+                            bot_db.remove_deposit_request(deposit)
                         logging.info('{0} deposited {1} iota'.format(reddit_username,balance))
                         del deposits[index]
 
@@ -97,7 +118,6 @@ deposit_thread.start()
 #Withdraw requests are pulled from the queue and executed one by one
 withdraw_queue = queue.Queue()
 def withdraws():
-    bot_api = api(seed)
     withdraws = []
     print("Withdraw thread started. Waiting for withdraws...")
     
@@ -117,12 +137,17 @@ def withdraws():
             amount = withdraw['amount']
             address = withdraw['address']
             print("Sending transfer to address {0} of amount {1}".format(address,amount))
-            bot_api.send_transfer(address,amount)
+            with bot_db_lock:
+                address_index = bot_db.get_address_index()
+                new_address = bot_api.get_new_address(address_index)
+                bot_db.add_used_address(address_index,new_address)
+            bot_api.send_transfer(address,amount,new_address)
             print("Transfer complete.")
             logging.info('{0} withdrew {1} iota to address: {2}'.format(reddit_username,amount,address.decode("utf-8")))
             reply = "You have successfully withdrawn {0} IOTA to address {1}".format(amount,address.decode("utf-8"))
             message.reply(reply + message_links)
-            bot_api.remove_withdraw_request(withdraw)
+            with bot_db_lock:
+                bot_db.remove_withdraw_request(withdraw)
             del withdraws[index]
 
 withdrawThread = threading.Thread(target=withdraws,args = ())
@@ -133,7 +158,8 @@ subreddit = reddit.subreddit('iota+iotaTipBot+IOTAmarkets+IOTAFaucet')
 #Monitor all subreddit comments for tips
 def monitor_comments():
     bot_api = api(seed)
-    comments_replied_to = bot_api.get_comments_replied_to()
+    with bot_db_lock:
+        comments_replied_to = bot_db.get_comments_replied_to()
     print("Comment thread started. Waiting for comments...")
     while True:
         try:
@@ -142,26 +168,31 @@ def monitor_comments():
                     author = comment.author.name
                     if bot_api.is_tip(comment):
                         amount = bot_api.get_iota_tip_amount(comment)
-                        if bot_api.check_balance(author,amount):
+                        with bot_db_lock:
+                            valid = bot_db.check_balance(author,amount)
+                        if valid:
                             parent_comment = comment.parent()
                             if parent_comment.author is None:
                                 continue
                             recipient = parent_comment.author.name
-                            bot_api.subtract_balance(author,amount)
-                            bot_api.add_balance(recipient,amount)
+                            with bot_db_lock:
+                                bot_db.subtract_balance(author,amount)
+                                bot_db.add_balance(recipient,amount)
                             print('Comment Thread: {0} tipped {1}'.format(author,recipient))
                             logging.info('{0} has tipped {1} {2} iota'.format(author,recipient,amount))
                             value = bot_api.get_iota_value(amount)
                             reply = "You have successfully tipped {0} {1} iota(${2}).".format(recipient,amount,'%f' % value)
                             comment.reply(reply + message_links)
                             comments_replied_to.append(comment.fullname)
-                            bot_api.add_replied_to_comment(comment.fullname)
+                            with bot_db_lock:
+                                bot_db.add_replied_to_comment(comment.fullname)
                             parent_comment.author.message("You have received a tip!","You received a tip of {0} iota from {1}".format(amount,author))
                         else:
                             reply = "You do not have the required funds."
                             comment.reply(reply + message_links)
                             comments_replied_to.append(comment.fullname)
-                            bot_api.add_replied_to_comment(comment.fullname)
+                            with bot_db_lock:
+                                bot_db.add_replied_to_comment(comment.fullname)
         except:
             print("Comment Thread Exception... Restarting...")
 
@@ -174,8 +205,10 @@ def periodic_check():
     print("Periodic Check thread started")
     while True:
         bot_api = api(seed)
-        total_balance = bot_api.get_total_balance()
-        account_balance = bot_api.get_account_balance()
+        with bot_db_lock:
+            total_balance = bot_db.get_total_balance()
+            address_index = bot_db.get_address_index()
+        account_balance = bot_api.get_account_balance(address_index)
         difference = account_balance - total_balance
         if total_balance == account_balance:
             print("Periodic Check Thread: Account balance matches total user balance:{0}.".format(account_balance))
@@ -187,7 +220,8 @@ def periodic_check():
             print("Periodic Check Thread: Account balance({0}) is greater than user balance({1}). Difference: {2}".format(account_balance,total_balance,difference))
             logging.info('Account balance({0}) is greater than user balance({1})'.format(account_balance, total_balance))
         
-        used_addresses = bot_api.get_used_addresses()
+        with bot_db_lock:
+            used_addresses = bot_db.get_used_addresses()
         address_list = []
         print("Periodic Check Thread: {0} addresses have been used".format(len(used_addresses)))
         for address in used_addresses:
@@ -205,8 +239,9 @@ print("Message thread started. Waiting for messages...")
 
 
 #Reinitiate any requests that were not completed
-deposit_requests = bot_api.get_deposit_requests()
-withdraw_requests = bot_api.get_withdraw_requests()
+with bot_db_lock:
+    deposit_requests = bot_db.get_deposit_requests()
+    withdraw_requests = bot_db.get_withdraw_requests()
 for deposit in deposit_requests:
     message_id = deposit[0]
     for message in reddit.inbox.messages():
@@ -260,14 +295,18 @@ while True:
                     #Check how much they want to withdrawl
                     if bot_api.contains_iota_amount(message):
                         amount = bot_api.get_iota_amount(message)
-                        if bot_api.check_balance(reddit_username,amount):
+                        with bot_db_lock:
+                            valid = bot_db.check_balance(reddit_username,amount)
+                        if valid:
                             #Find address
                             address = bot_api.get_message_address(message)
                             if address:
-                                bot_api.subtract_balance(reddit_username,amount)
+                                with bot_db_lock:
+                                    bot_db.subtract_balance(reddit_username,amount)
                                 transfer = {'type':'withdraw','reddit_username':reddit_username,'address':address,'message':message,'amount':amount,'time': time.time()}
                                 withdraw_queue.put(transfer)
-                                bot_api.add_withdraw_request(transfer)
+                                with bot_db_lock:
+                                   bot_db.add_withdraw_request(transfer)
                                 reply = "Your withdraw has been received and is being processed. Please be patient the withdraw process may take up to a few hours."
                                 message.reply(reply + message_links)
                                 message.mark_read()
@@ -276,7 +315,8 @@ while True:
                                 message.reply(reply + message_links)
                                 message.mark_read()
                         else:
-                            balance = bot_api.get_user_balance(reddit_username)
+                            with bot_db_lock:
+                                balance = bot_db.get_user_balance(reddit_username)
                             reply = "Sorry, you don't have {1} IOTA in your account. You currently have {0} IOTA.".format(balance, amount)
                             message.reply(reply + message_links)
                             message.mark_read()
@@ -288,7 +328,8 @@ while True:
 
                 #Check if it is a balance request
                 elif bot_api.is_balance_request(message):
-                    balance = bot_api.get_user_balance(reddit_username)
+                    with bot_db_lock:
+                        balance = bot_db.get_user_balance(reddit_username)
                     reply = "Your current balance is: {0} iota.".format(balance)
                     message.reply(reply + message_links)
                     message.mark_read()

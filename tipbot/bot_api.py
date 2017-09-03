@@ -16,25 +16,10 @@ node_address = config.node_address
 class api:
 
 
-    def __init__(self,seed,prod=True):
-        self.address_index = 0
-        if prod:
-            self.init_db()
+    def __init__(self,seed):
         self.iota_api = Iota(
             RoutingWrapper(node_address)
                 .add_route('attachToTangle','http://localhost:14265'),seed)
-
-    def init_db(self):
-        self.conn = sqlite3.connect(config.database_name)
-        self.db = self.conn.cursor()
-        self.create_database()
-        self.address_index = len(self.db.execute("SELECT * FROM usedAddresses").fetchall())
-        
-    def init_custom_db(self,name):
-        self.conn = sqlite3.connect(name)
-        self.db = self.conn.cursor()
-        self.create_database()
-        self.address_index = len(self.db.execute("SELECT * FROM usedAddresses").fetchall())
 
     def get_iota_value(self,amount):
         try:
@@ -45,11 +30,9 @@ class api:
                 return value
         except:
             return amount/1000000
-        
 
     #---------IOTA API FUNCTIONS--------------#
-    def send_transfer(self,addr,amount):
-        new_address = self.get_new_address()
+    def send_transfer(self,addr,amount,new_address):
         ret = self.iota_api.send_transfer(
             depth = 3,
             transfers = [
@@ -65,8 +48,8 @@ class api:
         )
         return ret
 
-    def get_account_balance(self):
-        addresses = self.iota_api.get_new_addresses(0,self.address_index)['addresses']
+    def get_account_balance(self,index):
+        addresses = self.iota_api.get_new_addresses(0,index)['addresses']
         balances = self.iota_api.get_balances(addresses)['balances']
         total = 0
         for balance in balances:
@@ -78,23 +61,10 @@ class api:
         return address_data['balances'][0]
 
 
-    def get_new_address(self):
-        self.get_address_index()
-        addresses = self.iota_api.get_new_addresses(self.address_index,1)
+    def get_new_address(self,index):
+        addresses = self.iota_api.get_new_addresses(index,1)
         for address in addresses['addresses']:
             address = address.with_valid_checksum()
-
-            #Check if address or index is already in the database
-            used_addresses = self.get_used_addresses()
-            for used_address in used_addresses:
-                if used_address[0] == self.address_index:
-                    return self.get_new_address()
-                elif used_address[1] == address._trytes.decode("utf-8"):
-                    return self.get_new_address()
-            self.add_used_address(self.address_index,address._trytes.decode("utf-8"))
-            self.address_index = self.address_index + 1
-            if self.get_balance(address) > 0:
-                return self.get_new_address()
             return address
 
     def create_seed(self):
@@ -235,8 +205,15 @@ class api:
         return False
 
 
+class Database:
     #--------------------Database Functions----------------------#
 
+    def __init__(self,name=config.database_name):
+        self.conn = sqlite3.connect(name,check_same_thread=False)
+        self.db = self.conn.cursor()
+        self.create_database()
+        self.address_index = len(self.db.execute("SELECT * FROM usedAddresses").fetchall())
+        
     def create_database(self):
         self.db.execute("CREATE TABLE IF NOT EXISTS users (redditUsername TEXT PRIMARY KEY, balance INTEGER)")
         self.conn.commit()

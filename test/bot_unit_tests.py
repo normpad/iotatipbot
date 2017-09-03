@@ -2,7 +2,7 @@ from iota import *
 from logging import basicConfig, DEBUG, getLogger
 from sys import stderr
 import time
-from bot_api import api
+from bot_api import api, Database
 import sqlite3
 import unittest
 import config
@@ -27,7 +27,7 @@ class BotUnitTests(unittest.TestCase):
            Function returns True
         """
         def test_is_deposit_requests_sunny_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'asdkfjsaddepositsadlkfjlasd'
                 body = 'asdjalksjdsa'
@@ -43,7 +43,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_deposit_request_sunny_2(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'asjdkhasjkd'
                 body = 'asdfkjasddepositklsafdj;lsdjf'
@@ -59,7 +59,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_deposit_request_sunny_3(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'askdljasdepositasdfkljsad'
                 body = 'aksljhfddepositaslkdj'
@@ -75,7 +75,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns False
         """
         def test_is_deposit_request_rainy_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'askldjflkasd'
                 body = 'askljfslad'
@@ -91,7 +91,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_withdraw_request_sunny_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'askdljaswithdraw'
                 body = 'asjkhnfsda'
@@ -107,7 +107,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_withdraw_request_sunny_2(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'asjkdhas'
                 body = 'asdklfjasdwithdrawasdfkjas'
@@ -123,7 +123,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_withdraw_request_sunny_3(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'sakljlaskdwithdrawfkljaslkdf'
                 body = 'askjldhaswithdrawkladjskld'
@@ -139,7 +139,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns False
         """
         def test_is_withdraw_request_sunny_3(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'asdklfjlaksd'
                 body = 'askljfasdf'
@@ -155,7 +155,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_balance_request_sunny_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'asklfjaskldbalanceasdkfljasd'
                 body = 'sakjalhfklas'
@@ -171,7 +171,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_balance_request_sunny_2(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'asjkldhas'
                 body = 'askljdflksadbalancesakldjflksad'
@@ -187,7 +187,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_balance_request_sunny_3(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'aasklfjasbalancekjasdflkas'
                 body = 'askldfjasdlkfbalancesadkljflasd'
@@ -203,7 +203,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns False
         """
         def test_is_balance_request_rainy_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'asdkfljasdk'
                 body = 'asdkfjaklsdf'
@@ -219,7 +219,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_help_request_sunny_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'askljdfalhelpasklfjaslkd'
                 body = 'askldfalskd'
@@ -235,7 +235,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_help_request_sunny_2(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'asklkd'
                 body = 'askldfhelpalskd'
@@ -251,7 +251,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_help_request_sunny_3(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'askljdfalhelpasklfjaslkd'
                 body = 'askldhelpfalskd'
@@ -267,7 +267,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_help_request_sunny_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'askljdlfjaslkd'
                 body = 'askldfalskd'
@@ -282,7 +282,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_contains_iota_amount_sunny_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'asdfkjlasdlkfj1024 iotaasjldklasd'
             self.assertTrue(bot_api.contains_iota_amount(Message))
@@ -296,7 +296,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_contains_iota_amount_sunny_2(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'asdfkjlasdlkfj1024 miotaasjldklasd'
             self.assertTrue(bot_api.contains_iota_amount(Message))
@@ -310,7 +310,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_contains_iota_amount_sunny_3(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'asdfkjlasdlkfj1024iotaasjldklasd'
             self.assertTrue(bot_api.contains_iota_amount(Message))
@@ -324,7 +324,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_contains_iota_amount_sunny_4(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'asdfkjlasdlkfj1024miotaasjldklasd'
             self.assertTrue(bot_api.contains_iota_amount(Message))
@@ -338,7 +338,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns False
         """
         def test_contains_iota_amount_sunny_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'asdfkjlasdjldklasd'
             self.assertFalse(bot_api.contains_iota_amount(Message))
@@ -352,7 +352,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns 1024
         """
         def test_get_iota_tip_amount_sunny_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'askldjflaksdj+1024 iotaasdfkljas'
             self.assertEqual(bot_api.get_iota_tip_amount(Message),1024)
@@ -366,7 +366,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns 1024000000
         """
         def test_get_iota_tip_amount_sunny_2(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'askldjflaksdj+1024 miotaasdfkljas'
             self.assertEqual(bot_api.get_iota_tip_amount(Message),1024000000)
@@ -381,7 +381,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns 1024
         """
         def test_get_iota_tip_amount_sunny_3(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'askldjflaksdj+1024iotaasdfkljas'
             self.assertEqual(bot_api.get_iota_tip_amount(Message),1024)
@@ -395,7 +395,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns 1024000000
         """
         def test_get_iota_tip_amount_sunny_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'askldjflaksdj+1024miotaasdfkljas'
             self.assertEqual(bot_api.get_iota_tip_amount(Message),1024000000)
@@ -409,7 +409,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns 1024
         """
         def test_get_iota_tip_amount_rainy_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'askldjf100 iota +1024 iotaasdfkljas'
             self.assertEqual(bot_api.get_iota_tip_amount(Message),1024)
@@ -423,7 +423,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns 1024000000
         """
         def test_get_iota_tip_amount_rainy_2(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'askldjflaksdj100 iota +1024miotaasdfkljas'
             self.assertEqual(bot_api.get_iota_tip_amount(Message),1024000000)
@@ -437,7 +437,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns None
         """
         def test_get_iota_tip_amount_rainy_3(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'askdlfjaskl'
             self.assertEqual(bot_api.get_iota_tip_amount(Message),None)
@@ -451,7 +451,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns 1024
         """
         def test_get_iota_amount_sunny_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'asdlkfjas1024 iota'
             self.assertEqual(bot_api.get_iota_amount(Message),1024)
@@ -465,7 +465,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns 1024000000
         """
         def test_get_iota_amount_sunny_2(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'asdlkfjas1024 miota'
             self.assertEqual(bot_api.get_iota_amount(Message),1024000000)
@@ -479,7 +479,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns 1024
         """
         def test_get_iota_amount_sunny_3(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'asdlkfjas1024iota'
             self.assertEqual(bot_api.get_iota_amount(Message),1024)
@@ -493,7 +493,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns 1024000000
         """
         def test_get_iota_amount_sunny_4(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'asdlkfjas1024miota'
             self.assertEqual(bot_api.get_iota_amount(Message),1024000000)
@@ -507,7 +507,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns None
         """
         def test_get_iota_amount_rainy_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'asdklfjhaslkdf'
             self.assertEqual(bot_api.get_iota_amount(Message),None)
@@ -521,7 +521,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns 'A'*90
         """
         def test_get_message_address_sunny_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'A'*90
             self.assertEqual(bot_api.get_message_address(Message),bytearray('A'*90,'utf-8'))
@@ -535,7 +535,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns None
         """
         def test_get_message_address_rainy_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 body = 'asdflkjasdklf'
             self.assertEqual(bot_api.get_message_address(Message),None)
@@ -549,7 +549,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_tip_sunny_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Comment:
                 body = 'sadklfjasdlk+1024 iotaasdfkljasld'  
             self.assertTrue(bot_api.is_tip(Comment))
@@ -563,7 +563,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_tip_sunny_2(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Comment:
                 body = 'sadklfjasdlk+1024iotaasdfkljasld'  
             self.assertTrue(bot_api.is_tip(Comment))
@@ -577,7 +577,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_tip_sunny_3(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Comment:
                 body = 'sadklfjasdlk+1024 miotaasdfkljasld'  
             self.assertTrue(bot_api.is_tip(Comment))
@@ -591,7 +591,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_tip_sunny_4(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Comment:
                 body = 'sadklfjasdlk+1024miotaasdfkljasld'  
             self.assertTrue(bot_api.is_tip(Comment))
@@ -605,7 +605,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns False
         """
         def test_is_tip_rainy_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Comment:
                 body = 'asdklfjaskljfas'
             self.assertFalse(bot_api.is_tip(Comment))
@@ -620,7 +620,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_donation_request_sunny_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'kljasjdfklasdonatelkas;jdfas'
                 body = 'askdlfjasdlk'
@@ -636,7 +636,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_donation_request_sunny_2(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'kljasjdfkllkas;jdfas'
                 body = 'askdlfjasdonatedlk'
@@ -652,7 +652,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_is_donation_request_sunny_3(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'kljasjdfklasdonatelkas;jdfas'
                 body = 'askdlfjdonateasdlk'
@@ -668,7 +668,7 @@ class BotUnitTests(unittest.TestCase):
             Function returns False
         """
         def test_is_donation_request_sunny_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             class Message:
                 subject = 'kljasjdfklaslkas;jdfas'
                 body = 'askdlfjasdlk'
@@ -685,9 +685,8 @@ class BotUnitTests(unittest.TestCase):
         """
         def test_add_new_user_sunny_1(self):
             username = 'TestUser123'
-            bot_api = api(test_seed,False)
-            bot_api.init_custom_db('testDB.db')
-            bot_api.add_new_user(username)
+            bot_db = Database('test_db.db')
+            bot_db.add_new_user(username)
 
         """
         Test set_balance
@@ -699,10 +698,9 @@ class BotUnitTests(unittest.TestCase):
         """
         def test_set_balance_sunny_1(self):
             username = 'TestUser123'
-            bot_api = api(test_seed,False)
-            bot_api.init_custom_db('testDB.db')
-            bot_api.set_balance(username,10)
-            self.assertEqual(bot_api.get_user_balance(username),10)
+            bot_db = Database('test_db.db')
+            bot_db.set_balance(username,10)
+            self.assertEqual(bot_db.get_user_balance(username),10)
 
         """
         Test add_balance
@@ -713,12 +711,11 @@ class BotUnitTests(unittest.TestCase):
             Balance is 10 greater than it was
         """
         def test_add_balance_sunny_1(self):
-            bot_api = api(test_seed,False)
-            bot_api.init_custom_db('testDB.db')
+            bot_db = Database('test_db.db')
             username = 'TestUser123'
-            starting_balance = bot_api.get_user_balance(username)
-            bot_api.add_balance(username,10)
-            self.assertEqual(bot_api.get_user_balance(username),starting_balance + 10)
+            starting_balance = bot_db.get_user_balance(username)
+            bot_db.add_balance(username,10)
+            self.assertEqual(bot_db.get_user_balance(username),starting_balance + 10)
             
         """
         Test subtract_balance
@@ -729,12 +726,11 @@ class BotUnitTests(unittest.TestCase):
             Balance is 10 less than it was
         """
         def test_subtract_balance_sunny_1(self):
-            bot_api = api(test_seed,False)
-            bot_api.init_custom_db('testDB.db')
+            bot_db = Database('test_db.db')
             username = 'TestUser123'
-            starting_balance = bot_api.get_user_balance(username)
-            bot_api.subtract_balance(username,10)
-            self.assertEqual(bot_api.get_user_balance(username),starting_balance - 10)
+            starting_balance = bot_db.get_user_balance(username)
+            bot_db.subtract_balance(username,10)
+            self.assertEqual(bot_db.get_user_balance(username),starting_balance - 10)
 
         """
         Test check_balance
@@ -745,11 +741,10 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_check_balance_sunny_1(self):
-            bot_api = api(test_seed,False)
-            bot_api.init_custom_db('testDB.db')
+            bot_db = Database('test_db.db')
             username = 'TestUser123'
-            bot_api.set_balance(username,50)
-            self.assertTrue(bot_api.check_balance(username,25))
+            bot_db.set_balance(username,50)
+            self.assertTrue(bot_db.check_balance(username,25))
 
         """
         Test check_balance
@@ -760,11 +755,10 @@ class BotUnitTests(unittest.TestCase):
             Function returns True
         """
         def test_check_balance_sunny_2(self):
-            bot_api = api(test_seed,False)
-            bot_api.init_custom_db('testDB.db')
+            bot_db = Database('test_db.db')
             username = 'TestUser123'
-            bot_api.set_balance(username,50)
-            self.assertTrue(bot_api.check_balance(username,50))
+            bot_db.set_balance(username,50)
+            self.assertTrue(bot_db.check_balance(username,50))
 
         """
         Test check_balance
@@ -775,11 +769,10 @@ class BotUnitTests(unittest.TestCase):
             Function returns False
         """
         def test_check_balance_rainy_1(self):
-            bot_api = api(test_seed,False)
-            bot_api.init_custom_db('testDB.db')
+            bot_db = Database('test_db.db')
             username = 'TestUser123'
-            bot_api.set_balance(username, 50)
-            self.assertFalse(bot_api.check_balance(username,100))
+            bot_db.set_balance(username, 50)
+            self.assertFalse(bot_db.check_balance(username,100))
 
         """
         Test get_user_balance
@@ -790,11 +783,10 @@ class BotUnitTests(unittest.TestCase):
             Function returns 50
         """
         def test_get_user_balance_sunny_1(self):
-            bot_api = api(test_seed,False)
-            bot_api.init_custom_db('testDB.db')
+            bot_db = Database('test_db.db')
             username = 'TestUser123'
-            bot_api.set_balance(username,50)
-            self.assertEqual(bot_api.get_user_balance(username),50)
+            bot_db.set_balance(username,50)
+            self.assertEqual(bot_db.get_user_balance(username),50)
 
         """
         Check total accumulated address value
@@ -802,13 +794,13 @@ class BotUnitTests(unittest.TestCase):
         """
         def test_total_address_value(self):
             bot_api = api(config.seed)
-            bot_api.init_custom_db('test_db.db')
-            used_addresses = bot_api.get_used_addresses()
+            bot_db = Database('test_db.db')
+            used_addresses = bot_db.get_used_addresses()
             address_sum = 0
             for address in used_addresses:
                 balance = bot_api.get_balance(Address(address[1]))
                 address_sum = address_sum + balance
-            self.assertEqual(bot_api.get_account_balance(),address_sum)
+            self.assertEqual(bot_api.get_account_balance(100),address_sum)
     
         """
         Test get_iota_value
@@ -819,7 +811,7 @@ class BotUnitTests(unittest.TestCase):
             function returns the proper value
         """
         def test_get_iota_value_sunny_1(self):
-            bot_api = api(test_seed,False)
+            bot_api = api(test_seed)
             amount = 10000
             value = bot_api.get_iota_value(10000)
             print('Value is: ${0}'.format(value))
