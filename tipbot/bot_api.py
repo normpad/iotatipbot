@@ -32,7 +32,7 @@ class api:
             return amount/1000000
 
     #---------IOTA API FUNCTIONS--------------#
-    def send_transfer(self,addr,amount,new_address):
+    def send_transfer(self,addr,amount,new_address,index):
         ret = self.iota_api.send_transfer(
             depth = 3,
             transfers = [
@@ -44,7 +44,8 @@ class api:
                 ), 
             ],
             min_weight_magnitude=15,
-            change_address = new_address
+            change_address = new_address,
+            inputs = self.iota_api.get_inputs(0,index),
         )
         return ret
 
