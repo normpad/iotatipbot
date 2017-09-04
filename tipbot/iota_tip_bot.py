@@ -72,7 +72,7 @@ def deposits():
                         if bot_api.get_balance(address) == 0:
                             break
                     
-                reply = "Please transfer your IOTA to this address:\n{0}\n\nDo not deposit to the same address more than once. This address will expire in 2 hours".format(address._trytes.decode("utf-8"))
+                reply = "Please transfer your IOTA to this address:\n{0}\n\nDo not deposit to the same address more than once. This address will expire in 5 hours".format(address._trytes.decode("utf-8"))
                 logging.info('{0} was assigned to address {1}'.format(reddit_username,address._trytes.decode("utf-8")))
                 message.reply(reply + message_links)
                 
@@ -85,7 +85,7 @@ def deposits():
             elif deposit_type == 'deposit':
                 deposit_time = deposit['time']
                 #Check if the deposit request has expired
-                if (time.time() - deposit_time) > 7200:
+                if (time.time() - deposit_time) > 18000:
                     reply = ('Your deposit request has timed out. Please start a new deposit. Do not transfer to the previous address.')
                     message.reply(reply+message_links)
                     with bot_db_lock:
