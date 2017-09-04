@@ -75,7 +75,7 @@ class api:
         return seed
 
     def check_transaction(self,transaction):
-        transaction_hash = transaction['bundle'].hash
+        transaction_hash = transaction['bundle'].tail_transaction.hash
         inclusion_states = self.iota_api.get_latest_inclusion([transaction_hash])
         return inclusion_states['states'][transaction_hash]
 
