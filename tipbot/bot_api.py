@@ -160,12 +160,16 @@ class api:
     def get_iota_tip_amount(self,message):
         iota_amount_string = re.compile("\+\s*([0-9]+)\s*iota",re.I)
         miota_amount_string = re.compile("\+\s*([0-9]+)\s*miota",re.I)
+        miota_fraction_amount_string = re.compile("\+\s*([0-9]+.[0-9]+)\s*miota")
         match = iota_amount_string.search(message.body)
         if match:
             return int(match.group(1))
         match = miota_amount_string.search(message.body)
         if match:
             return (int(match.group(1))*1000000)
+        match = miota_fraction_amount_string.search(message.body)
+        if match:
+            return(int(float(match.group(1))*1000000))
 
     def get_iota_amount(self,message):
         iota_amount_string = re.compile("([0-9]+)\s*iota",re.I)
@@ -186,13 +190,9 @@ class api:
             return None
 
     def is_tip(self,comment):
-        tip_string_iota = re.compile("\+\s*[0-9]+\s*iota",re.I)
-        tip_string_miota = re.compile("\+\s*[0-9]+\s*miota",re.I)
+        tip_string = re.compile("\+\s*[0-9]+\s*miota|\+\s*[0-9]+\s*iota|\+\s*[0-9]+.[0-9]+\s*miota",re.I)
         text = comment.body
-        match = tip_string_iota.search(text)
-        if match:
-            return True
-        match = tip_string_miota.search(text)
+        match = tip_string.search(text)
         if match:
             return True
         return False
