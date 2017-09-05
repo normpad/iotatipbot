@@ -207,6 +207,13 @@ class api:
             return True
         return False
 
+    def is_mention(self,comment):
+        mention_string = re.compile("u/iotaTipBot",re.I)
+        match = mention_string.search(comment.body)
+        if match:
+            return True
+        return False
+
 
 class Database:
     #--------------------Database Functions----------------------#
