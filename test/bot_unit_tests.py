@@ -394,11 +394,39 @@ class BotUnitTests(unittest.TestCase):
         Postconditions:
             Function returns 1024000000
         """
-        def test_get_iota_tip_amount_sunny_1(self):
+        def test_get_iota_tip_amount_sunny_4(self):
             bot_api = api(test_seed)
             class Message:
                 body = 'askldjflaksdj+1024miotaasdfkljas'
             self.assertEqual(bot_api.get_iota_tip_amount(Message),1024000000)
+
+        """
+        Test get_iota_tip_amoun
+        Sunny Day 5
+        Preconditions:
+            Message body contains '+0.01 miota'
+        Postconditions:
+            Functions returns 10000
+        """
+        def test_get_iota_tip_amount_sunny_5(self):
+            bot_api = api(test_seed)
+            class Message:
+                body = 'asdkjlfjaslkd+0.01 miotaasdklfjlkasd'
+            self.assertEqual(bot_api.get_iota_tip_amount(Message),10000)
+
+        """
+        Test get_iota_tip_amoun
+        Sunny Day 6
+        Preconditions:
+            Message body contains '+0.01miota'
+        Postconditions:
+            Functions returns 10000
+        """
+        def test_get_iota_tip_amount_sunny_6(self):
+            bot_api = api(test_seed)
+            class Message:
+                body = 'asdkjlfjaslkd+0.01miotaasdklfjlkasd'
+            self.assertEqual(bot_api.get_iota_tip_amount(Message),10000)
 
         """
         Test get_iota_tip_amount
@@ -598,6 +626,35 @@ class BotUnitTests(unittest.TestCase):
 
         """
         Test is_tip
+        Sunny Day 5
+        Preconditions:
+            Message body contains '+0.01 miota'
+        Postconditions:
+            Function returns True
+        """
+        def test_is_tip_sunny_5(self):
+            bot_api = api(test_seed)
+            class Comment:
+                body = 'aslkdjfslakdjf+0.01 miotaklajsdklfa'
+            self.assertTrue(bot_api.is_tip(Comment))
+
+        """
+        Test is_tip
+        Sunny Day 6
+        Preconditions:
+            Message body contains '+0.01miota'
+        Postconditions:
+            Function returns True
+        """
+        def test_is_tip_sunny_6(self):
+            bot_api = api(test_seed)
+            class Comment:
+                body = 'aslkdjfslakdjf+0.01miotaklajsdklfa'
+            self.assertTrue(bot_api.is_tip(Comment))
+
+
+        """
+        Test is_tip
         Rainy Day 1
         Preconditions:
             Message body does not contain a tip
@@ -788,20 +845,6 @@ class BotUnitTests(unittest.TestCase):
             bot_db.set_balance(username,50)
             self.assertEqual(bot_db.get_user_balance(username),50)
 
-        """
-        Check total accumulated address value
-        Compare it to the results of get_account_balance
-        """
-        def test_total_address_value(self):
-            bot_api = api(config.seed)
-            bot_db = Database('test_db.db')
-            used_addresses = bot_db.get_used_addresses()
-            address_sum = 0
-            for address in used_addresses:
-                balance = bot_api.get_balance(Address(address[1]))
-                address_sum = address_sum + balance
-            self.assertEqual(bot_api.get_account_balance(100),address_sum)
-    
         """
         Test get_iota_value
         Sunny 1
