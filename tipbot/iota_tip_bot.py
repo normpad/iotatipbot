@@ -154,7 +154,7 @@ withdrawThread = threading.Thread(target=withdraws,args = ())
 withdrawThread.daemon = True
 withdrawThread.start()
 
-subreddit = reddit.subreddit('iota+iotaTipBot+IOTAmarkets+IOTAFaucet')
+subreddit = reddit.subreddit('iota+iotaTipBot+IOTAmarkets+IOTAFaucet+iota4earth')
 #Monitor all subreddit comments for tips
 def monitor_comments():
     bot_api = api(seed)
