@@ -135,7 +135,7 @@ def withdraws():
             message = withdraw['message']
             amount = withdraw['amount']
             address = withdraw['address']
-            print("Sending transfer to address {0} of amount {1}".format(address,amount))
+            print("Sending transfer to address {0} of amount {1}".format(address.decode("utf-8"),amount))
             with bot_db_lock:
                 address_index = bot_db.get_address_index()
                 new_address = bot_api.get_new_address(address_index)
