@@ -27,5 +27,5 @@ If you are new to iota and are looking for more information here are a few usefu
 * [Supply and Units Reference](https://i.imgur.com/lsq4610.jpeg)
 
 Follow the iotaTipBot in action on reddit:
-* [/r/iotaTipBot](reddit.com/r/iotaTipBot)
-* [/u/iotaTipBot](reddit.com/u/iotaTipBot)
+* [/r/iotaTipBot](http://reddit.com/r/iotaTipBot)
+* [/u/iotaTipBot](http://reddit.com/u/iotaTipBot)
