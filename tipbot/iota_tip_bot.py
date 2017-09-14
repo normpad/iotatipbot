@@ -200,8 +200,8 @@ def monitor_comments():
                             comments_replied_to.append(comment.fullname)
                             with bot_db_lock:
                                 bot_db.add_replied_to_comment(comment.fullname)
-        except:
-            print("Comment Thread Exception... Restarting...")
+        except praw.exceptions.APIException:
+            print("Reddit API exception. Restarting Thread...")
 
 
 comment_thread = threading.Thread(target=monitor_comments,args = ())
@@ -350,5 +350,5 @@ while True:
                     reply = "Donations help keep this project alive! They help to cover server costs and development time. If you would like to support this project there are many options! Transfer cryptocurrency to one of the addresses below or simply tip the bot! Thank you for your support!\n\nIOTA: IYFJCTTLRIWUWAUB9ZLCRKVKAAQVWHWTENKVVZBXYUPU9YFTBMKFXYWXWESLWJSTBRADUSGVJPVJZCJEZ9IGYDKDJZ\n\nEthereum: 0x254EBc1863FD4eE5F4469b9A18505aF8de958812\n\nBitcoin: 18VhQTN9QcwJNQwMTb2H2AsvCaGsNfzKNK"
                     message.reply(reply+message_links)
                     message.mark_read()
-    except:
-        print("Message Thread Exception...")
+    except praw.exceptions.APIException:
+        print("Reddit API exception. Restarting...")
