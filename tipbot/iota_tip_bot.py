@@ -9,6 +9,7 @@ from iota import *
 from bot_api import api,Database
 import logging
 import config
+from transaction_types import Deposit, Withdraw
 
 #Grab static variables from the config
 seed = config.seed
@@ -34,7 +35,7 @@ bot_db_lock = threading.Lock()
 #A thread to handle deposits
 #Deposits are handled in 2 phases. 
 #   Phase1: A unique 0 balance address is generated and given to the user
-#   Phase2: The address is checked for a balance, if the address has a balance grear than 0
+#   Phase2: The address is checked for a balance, if the address has a balance greater than 0
 #           then the user has deposited to that address and their account should be credited
 deposit_queue = queue.Queue()
 def deposits():
@@ -47,18 +48,16 @@ def deposits():
         try:
             #Check the queue for new deposits, add them to the database and local deposit list.
             new_deposit = deposit_queue.get(False)
-            with bot_db_lock:
-                bot_db.add_deposit_request(new_deposit)
             deposits.append(new_deposit)
-            print("New deposit received: (" + new_deposit['type'] + ", " + new_deposit['reddit_username'] + ")")
+            print("New deposit received: (" + new_deposit.reddit_username + ")")
         except queue.Empty:
             pass
         for index,deposit in enumerate(deposits):
-            deposit_type = deposit['type']
-            reddit_username = deposit['reddit_username']
-            message = deposit['message']
+            reddit_username = deposit.reddit_username
+            message = deposit.message
+            address = deposit.address
 
-            if deposit_type == 'address':
+            if address is None:
 
                 #lock the database
                 #generate the address
@@ -75,15 +74,16 @@ def deposits():
                 reply = "Please transfer your IOTA to this address:\n{0}\n\nDo not deposit to the same address more than once. This address will expire in 5 hours".format(address._trytes.decode("utf-8"))
                 logging.info('{0} was assigned to address {1}'.format(reddit_username,address._trytes.decode("utf-8")))
                 message.reply(reply + message_links)
-                
-                deposit = {'type':'deposit','reddit_username':reddit_username,'address':address,'message':message,'time':time.time()}
-                deposit_queue.put(deposit)
                 with bot_db_lock:
                     bot_db.remove_deposit_request(deposit)
+                    deposit.address = address
+                    bot_db.add_deposit_request(deposit)
                 del deposits[index]
+                deposits.append(deposit)
 
-            elif deposit_type == 'deposit':
-                deposit_time = deposit['time']
+            else:
+                deposit_time = deposit.deposit_time
+
                 #Check if the deposit request has expired
                 if (time.time() - deposit_time) > 18000:
                     reply = ('Your deposit request has timed out. Please start a new deposit. Do not transfer to the previous address.')
@@ -93,8 +93,8 @@ def deposits():
                     logging.info('{0}\'s deposit has timed out'.format(reddit_username))
                     del deposits[index]
                 else:
-                    address = deposit['address']
-                    reddit_username = deposit['reddit_username']
+                    address = deposit.address
+                    reddit_username = deposit.reddit_username
                     balance = bot_api.get_balance(address)
                     if balance > 0:
                         print("Transaction found, {0} transfered {1} iota".format(reddit_username,balance))
@@ -123,18 +123,17 @@ def withdraws():
     while True:
         time.sleep(1)
         try:
-            newWithdraw = withdraw_queue.get(False)    
-            withdraws.append(newWithdraw)
-            print("New withdraw received: (" + newWithdraw['type'] + ", " + newWithdraw['reddit_username'] + ")")
+            new_withdraw = withdraw_queue.get(False)    
+            withdraws.append(new_withdraw)
+            print("New withdraw received: ({0},{1})".format(new_withdraw.reddit_username,new_withdraw.amount))
             print("{0} withdraws in queue".format(withdraw_queue.qsize()))
         except queue.Empty:
                 pass
         for index,withdraw in enumerate(withdraws):
-            withdrawType = withdraw['type']
-            reddit_username = withdraw['reddit_username']
-            message = withdraw['message']
-            amount = withdraw['amount']
-            address = withdraw['address']
+            reddit_username = withdraw.reddit_username
+            message = withdraw.message
+            amount = withdraw.amount
+            address = withdraw.address
             print("Sending transfer to address {0} of amount {1}".format(address.decode("utf-8"),amount))
             with bot_db_lock:
                 address_index = bot_db.get_address_index()
@@ -161,7 +160,7 @@ withdrawThread = threading.Thread(target=withdraws,args = ())
 withdrawThread.daemon = True
 withdrawThread.start()
 
-subreddit = reddit.subreddit('iota+iotaTipBot+IOTAmarkets+IOTAFaucet+iota4earth')
+subreddit = reddit.subreddit(config.subreddits)
 #Monitor all subreddit comments for tips
 def monitor_comments():
     bot_api = api(seed)
@@ -249,27 +248,25 @@ print("Message thread started. Waiting for messages...")
 with bot_db_lock:
     deposit_requests = bot_db.get_deposit_requests()
     withdraw_requests = bot_db.get_withdraw_requests()
-for deposit in deposit_requests:
-    message_id = deposit[0]
-    for message in reddit.inbox.messages():
-        if message.fullname == message_id:
-            user = message.author.name
-            if deposit[1] is None:
-                transfer = {'type':'address','reddit_username':user,'message':message,'time':time.time()}
-                deposit_queue.put(transfer)
-            else:
-                transfer = {'type':'deposit','reddit_username':user,'address':Address(deposit[1]),'message':message,'time':time.time()}
-                deposit_queue.put(transfer)
-            break
-for withdraw in withdraw_requests:
-    message_id = withdraw[0]
-    address = bytearray(withdraw[1],"utf-8")
-    amount = withdraw[2]
-    for message in reddit.inbox.messages():
-        if message.fullname == message_id:
-            user = message.author.name
-            transfer = {'type':'withdraw','reddit_username':user,'address':address,'amount':amount,'message':message}
-            withdraw_queue.put(transfer)
+
+for deposit_request in deposit_requests:
+    message_id = deposit_request[0]
+    reddit_username = deposit_request[1]
+    address = deposit_request[2]
+    if address is not None:
+        address = Address(address)
+    message = reddit.inbox.message(message_id)
+    deposit = Deposit(reddit_username,message,address)
+    deposit_queue.put(deposit)
+
+for withdraw_request in withdraw_requests:
+    message_id = withdraw_request[0]
+    reddit_username = withdraw_request[1]
+    address = bytearray(withdraw_request[2],'utf-8')
+    amount = withdraw_request[3]
+    message = reddit.inbox.message(message_id)
+    withdraw = Withdraw(reddit_username,message,address,amount)
+    withdraw_queue.put(withdraw)
 
 
 print("Bot initalized.")
@@ -286,12 +283,16 @@ while True:
 
             #It's a new message, see what it says
             if message.new:
+                if message.author is None:
+                    continue
                 reddit_username = message.author.name
 
                 #Check if it is a deposit request
                 if bot_api.is_deposit_request(message):
-                    transfer = {'type':'address','reddit_username':reddit_username, 'message':message,'time': time.time()}
-                    deposit_queue.put(transfer)
+                    deposit = Deposit(reddit_username,message)
+                    deposit_queue.put(deposit)
+                    with bot_db_lock:
+                        bot_db.add_deposit_request(deposit)
                     #reply = "Deposits are currently disabled until some issues can be sorted out. Thank you for your patience."
                     #message.reply(reply + message_links)
                     message.mark_read()
@@ -310,7 +311,7 @@ while True:
                             if address:
                                 with bot_db_lock:
                                     bot_db.subtract_balance(reddit_username,amount)
-                                transfer = {'type':'withdraw','reddit_username':reddit_username,'address':address,'message':message,'amount':amount,'time': time.time()}
+                                transfer = Withdraw(reddit_username,message,address,amount)
                                 withdraw_queue.put(transfer)
                                 with bot_db_lock:
                                    bot_db.add_withdraw_request(transfer)

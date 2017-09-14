@@ -343,9 +343,9 @@ class Database:
         self.conn.commit()
         self.db.execute("CREATE TABLE IF NOT EXISTS usedAddresses (addressIndex INTEGER PRIMARY KEY, address TEXT)")
         self.conn.commit()
-        self.db.execute("CREATE TABLE IF NOT EXISTS depositRequests (messageId TEXT PRIMARY KEY, address TEXT)")
+        self.db.execute("CREATE TABLE IF NOT EXISTS depositRequests (messageId TEXT PRIMARY KEY, redditUsername TEXT, address TEXT)")
         self.conn.commit()
-        self.db.execute("CREATE TABLE IF NOT EXISTS withdrawRequests (messageId TEXT PRIMARY KEY, address TEXT, amount INTEGER)")
+        self.db.execute("CREATE TABLE IF NOT EXISTS withdrawRequests (messageId TEXT PRIMARY KEY, redditUsername TEXT, address TEXT, amount INTEGER)")
         self.conn.commit()
 
     def add_new_user(self,reddit_username):
@@ -485,16 +485,18 @@ class Database:
             request: The request to add
         """
 
-        if request['type'] == 'deposit':
-            address = request['address']
-            reddit_username = request['reddit_username']
-            message = request['message']
-            message_id = message.fullname
-            query = self.db.execute("SELECT * FROM depositRequests WHERE messageId=?",(message_id,)).fetchone()
-            if query is not None:
-                return
-            self.db.execute("INSERT INTO depositRequests(messageId,address) VALUES (?,?)",(message_id,address._trytes.decode("utf-8")))
-            self.conn.commit()
+        address = request.address
+        reddit_username = request.reddit_username
+        message = request.message
+        message_id = message.id
+        query = self.db.execute("SELECT * FROM depositRequests WHERE messageId=?",(message_id,)).fetchone()
+        if query is not None:
+            return
+        if address is None:
+            self.db.execute("INSERT INTO depositRequests(messageId, redditUsername) VALUES (?,?)",(message_id,reddit_username))
+        else:
+            self.db.execute("INSERT INTO depositRequests(messageId,redditUsername,address) VALUES (?,?,?)",(message_id,reddit_username,address._trytes.decode("utf-8")))
+        self.conn.commit()
 
     def remove_deposit_request(self,request):
         """
@@ -503,11 +505,10 @@ class Database:
             request: The request to remove
         """
 
-        if request['type'] == 'deposit':
-            message = request['message']
-            message_id = message.fullname
-            self.db.execute("DELETE FROM depositRequests WHERE messageId=?",(message_id,))
-            self.conn.commit()
+        message = request.message
+        message_id = message.id
+        self.db.execute("DELETE FROM depositRequests WHERE messageId=?",(message_id,))
+        self.conn.commit()
 
     def get_deposit_requests(self):
         """
@@ -524,11 +525,12 @@ class Database:
             request: The request to add
         """
 
-        address = request['address']
-        message = request['message']
-        message_id = message.fullname
-        amount = request['amount']
-        self.db.execute("INSERT INTO withdrawRequests(messageId,address,amount) VALUES (?,?,?)",(message_id,address.decode("utf-8"),amount))
+        address = request.address
+        reddit_username = request.reddit_username
+        message = request.message
+        message_id = message.id
+        amount = request.amount
+        self.db.execute("INSERT INTO withdrawRequests(messageId,redditUsername,address,amount) VALUES (?,?,?,?)",(message_id,reddit_username,address.decode("utf-8"),amount))
         self.conn.commit()
 
     def remove_withdraw_request(self,request):
@@ -538,8 +540,8 @@ class Database:
             request: The request to remove
         """
         
-        message = request['message']
-        message_id = message.fullname
+        message = request.message
+        message_id = message.id
         self.db.execute("DELETE FROM withdrawRequests WHERE messageId=?",(message_id,))
         self.conn.commit()
 
