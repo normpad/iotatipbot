@@ -252,20 +252,20 @@ with bot_db_lock:
 
 for deposit_request in deposit_requests:
     message_id = deposit_request[0]
-    reddit_username = deposit_request[1]
-    address = deposit_request[2]
+    address = deposit_request[1]
     if address is not None:
         address = Address(address)
     message = reddit.inbox.message(message_id)
+    reddit_username = message.author.name
     deposit = Deposit(reddit_username,message,address)
     deposit_queue.put(deposit)
 
 for withdraw_request in withdraw_requests:
     message_id = withdraw_request[0]
-    reddit_username = withdraw_request[1]
-    address = bytearray(withdraw_request[2],'utf-8')
-    amount = withdraw_request[3]
+    address = bytearray(withdraw_request[1],'utf-8')
+    amount = withdraw_request[2]
     message = reddit.inbox.message(message_id)
+    reddit_username = message.author.name
     withdraw = Withdraw(reddit_username,message,address,amount)
     withdraw_queue.put(withdraw)
 

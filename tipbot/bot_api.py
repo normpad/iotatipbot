@@ -343,9 +343,9 @@ class Database:
         self.conn.commit()
         self.db.execute("CREATE TABLE IF NOT EXISTS usedAddresses (addressIndex INTEGER PRIMARY KEY, address TEXT)")
         self.conn.commit()
-        self.db.execute("CREATE TABLE IF NOT EXISTS depositRequests (messageId TEXT PRIMARY KEY, redditUsername TEXT, address TEXT)")
+        self.db.execute("CREATE TABLE IF NOT EXISTS depositRequests (messageId TEXT PRIMARY KEY, address TEXT)")
         self.conn.commit()
-        self.db.execute("CREATE TABLE IF NOT EXISTS withdrawRequests (messageId TEXT PRIMARY KEY, redditUsername TEXT, address TEXT, amount INTEGER)")
+        self.db.execute("CREATE TABLE IF NOT EXISTS withdrawRequests (messageId TEXT PRIMARY KEY, address TEXT, amount INTEGER)")
         self.conn.commit()
 
     def add_new_user(self,reddit_username):
