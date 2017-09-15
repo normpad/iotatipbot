@@ -493,9 +493,9 @@ class Database:
         if query is not None:
             return
         if address is None:
-            self.db.execute("INSERT INTO depositRequests(messageId, redditUsername) VALUES (?,?)",(message_id,reddit_username))
+            self.db.execute("INSERT INTO depositRequests(messageId) VALUES (?)",(message_id,))
         else:
-            self.db.execute("INSERT INTO depositRequests(messageId,redditUsername,address) VALUES (?,?,?)",(message_id,reddit_username,address._trytes.decode("utf-8")))
+            self.db.execute("INSERT INTO depositRequests(messageId,address) VALUES (?,?)",(message_id,address._trytes.decode("utf-8")))
         self.conn.commit()
 
     def remove_deposit_request(self,request):
@@ -530,7 +530,7 @@ class Database:
         message = request.message
         message_id = message.id
         amount = request.amount
-        self.db.execute("INSERT INTO withdrawRequests(messageId,redditUsername,address,amount) VALUES (?,?,?,?)",(message_id,reddit_username,address.decode("utf-8"),amount))
+        self.db.execute("INSERT INTO withdrawRequests(messageId,address,amount) VALUES (?,?,?)",(message_id,address.decode("utf-8"),amount))
         self.conn.commit()
 
     def remove_withdraw_request(self,request):
