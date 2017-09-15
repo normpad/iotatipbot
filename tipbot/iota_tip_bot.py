@@ -9,6 +9,7 @@ from iota import *
 from bot_api import api,Database
 import logging
 import config
+from transaction_types import Deposit, Withdraw
 
 #Grab static variables from the config
 seed = config.seed
@@ -26,6 +27,7 @@ reddit = praw.Reddit(
 logging.basicConfig(filename='transactionLogs.log',format='%(levelname)s: %(asctime)s: %(message)s ',level=logging.INFO)
 
 #Message links to be appended to every message/comment reply
+help_message = "iotaTipBot is a bot that allows reddit users to send iota to each other through reddit comments. The bot commands are as follows:\n\n* 'Deposit' - Initiates the process of depositing iota into your tipping account\n\n* 'Withdraw' - Withdraw iota from your tipping account. You must put the address you want to withdraw to and the amount of iota in the message.\n\n* 'Balance' - Check the amount of iota you have stored in the bot.\n\n* 'Help' - Sends the help message\n\n* 'Donate' - Get a list of options to help support the project.\n\nThese commands are activated by sending the command to the bot either in the subject or the body of the message.\n\nOnce you have iota in your tipping account you can start tipping! To do this simply reply to a comment with a message of the format: '+<amount> iota'\n\nFor example '+25 iota' will tip 25 iota to the author of the comment you replied to. To tip higher values, you can swap the 'iota' part of the comment with 'miota' to tip megaIota values: '+25 miota' will then tip 25 megaIota.\n\nIf you are new to iota and are looking for more information here are a few useful links:\n\n* [Reddit Newcomer Information](https://www.reddit.com/r/Iota/comments/61rc0c/for_newcomers_all_information_links_you_probably/)\n\n* [IOTA Wallet Download](https://github.com/iotaledger/wallet/releases/)\n\n* [Supply and Units Reference](https://i.imgur.com/lsq4610.jpeg)"
 message_links = "\n\n[Deposit](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Deposit&message=Deposit iota!) | [Withdraw](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Withdraw&message=I want to withdraw my iota!\nxxx iota \naddress here) | [Balance](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Balance&message=I want to check my balance!) | [Help](https://www.reddit.com/r/iotaTipBot/wiki/index) | [Donate](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Donate&message=I want to support iotaTipBot!)\n"
 
 bot_db = Database()
@@ -34,7 +36,7 @@ bot_db_lock = threading.Lock()
 #A thread to handle deposits
 #Deposits are handled in 2 phases. 
 #   Phase1: A unique 0 balance address is generated and given to the user
-#   Phase2: The address is checked for a balance, if the address has a balance grear than 0
+#   Phase2: The address is checked for a balance, if the address has a balance greater than 0
 #           then the user has deposited to that address and their account should be credited
 deposit_queue = queue.Queue()
 def deposits():
@@ -47,18 +49,16 @@ def deposits():
         try:
             #Check the queue for new deposits, add them to the database and local deposit list.
             new_deposit = deposit_queue.get(False)
-            with bot_db_lock:
-                bot_db.add_deposit_request(new_deposit)
             deposits.append(new_deposit)
-            print("New deposit received: (" + new_deposit['type'] + ", " + new_deposit['reddit_username'] + ")")
+            print("New deposit received: (" + new_deposit.reddit_username + ")")
         except queue.Empty:
             pass
         for index,deposit in enumerate(deposits):
-            deposit_type = deposit['type']
-            reddit_username = deposit['reddit_username']
-            message = deposit['message']
+            reddit_username = deposit.reddit_username
+            message = deposit.message
+            address = deposit.address
 
-            if deposit_type == 'address':
+            if address is None:
 
                 #lock the database
                 #generate the address
@@ -75,15 +75,16 @@ def deposits():
                 reply = "Please transfer your IOTA to this address:\n{0}\n\nDo not deposit to the same address more than once. This address will expire in 5 hours".format(address._trytes.decode("utf-8"))
                 logging.info('{0} was assigned to address {1}'.format(reddit_username,address._trytes.decode("utf-8")))
                 message.reply(reply + message_links)
-                
-                deposit = {'type':'deposit','reddit_username':reddit_username,'address':address,'message':message,'time':time.time()}
-                deposit_queue.put(deposit)
                 with bot_db_lock:
                     bot_db.remove_deposit_request(deposit)
+                    deposit.address = address
+                    bot_db.add_deposit_request(deposit)
                 del deposits[index]
+                deposits.append(deposit)
 
-            elif deposit_type == 'deposit':
-                deposit_time = deposit['time']
+            else:
+                deposit_time = deposit.deposit_time
+
                 #Check if the deposit request has expired
                 if (time.time() - deposit_time) > 18000:
                     reply = ('Your deposit request has timed out. Please start a new deposit. Do not transfer to the previous address.')
@@ -93,8 +94,8 @@ def deposits():
                     logging.info('{0}\'s deposit has timed out'.format(reddit_username))
                     del deposits[index]
                 else:
-                    address = deposit['address']
-                    reddit_username = deposit['reddit_username']
+                    address = deposit.address
+                    reddit_username = deposit.reddit_username
                     balance = bot_api.get_balance(address)
                     if balance > 0:
                         print("Transaction found, {0} transfered {1} iota".format(reddit_username,balance))
@@ -123,18 +124,17 @@ def withdraws():
     while True:
         time.sleep(1)
         try:
-            newWithdraw = withdraw_queue.get(False)    
-            withdraws.append(newWithdraw)
-            print("New withdraw received: (" + newWithdraw['type'] + ", " + newWithdraw['reddit_username'] + ")")
+            new_withdraw = withdraw_queue.get(False)    
+            withdraws.append(new_withdraw)
+            print("New withdraw received: ({0},{1})".format(new_withdraw.reddit_username,new_withdraw.amount))
             print("{0} withdraws in queue".format(withdraw_queue.qsize()))
         except queue.Empty:
                 pass
         for index,withdraw in enumerate(withdraws):
-            withdrawType = withdraw['type']
-            reddit_username = withdraw['reddit_username']
-            message = withdraw['message']
-            amount = withdraw['amount']
-            address = withdraw['address']
+            reddit_username = withdraw.reddit_username
+            message = withdraw.message
+            amount = withdraw.amount
+            address = withdraw.address
             print("Sending transfer to address {0} of amount {1}".format(address.decode("utf-8"),amount))
             with bot_db_lock:
                 address_index = bot_db.get_address_index()
@@ -161,7 +161,7 @@ withdrawThread = threading.Thread(target=withdraws,args = ())
 withdrawThread.daemon = True
 withdrawThread.start()
 
-subreddit = reddit.subreddit('iota+iotaTipBot+IOTAmarkets+IOTAFaucet+iota4earth')
+subreddit = reddit.subreddit(config.subreddits)
 #Monitor all subreddit comments for tips
 def monitor_comments():
     bot_api = api(seed)
@@ -200,8 +200,8 @@ def monitor_comments():
                             comments_replied_to.append(comment.fullname)
                             with bot_db_lock:
                                 bot_db.add_replied_to_comment(comment.fullname)
-        except:
-            print("Comment Thread Exception... Restarting...")
+        except praw.exceptions.APIException:
+            print("Reddit API exception. Restarting Thread...")
 
 
 comment_thread = threading.Thread(target=monitor_comments,args = ())
@@ -249,27 +249,25 @@ print("Message thread started. Waiting for messages...")
 with bot_db_lock:
     deposit_requests = bot_db.get_deposit_requests()
     withdraw_requests = bot_db.get_withdraw_requests()
-for deposit in deposit_requests:
-    message_id = deposit[0]
-    for message in reddit.inbox.messages():
-        if message.fullname == message_id:
-            user = message.author.name
-            if deposit[1] is None:
-                transfer = {'type':'address','reddit_username':user,'message':message,'time':time.time()}
-                deposit_queue.put(transfer)
-            else:
-                transfer = {'type':'deposit','reddit_username':user,'address':Address(deposit[1]),'message':message,'time':time.time()}
-                deposit_queue.put(transfer)
-            break
-for withdraw in withdraw_requests:
-    message_id = withdraw[0]
-    address = bytearray(withdraw[1],"utf-8")
-    amount = withdraw[2]
-    for message in reddit.inbox.messages():
-        if message.fullname == message_id:
-            user = message.author.name
-            transfer = {'type':'withdraw','reddit_username':user,'address':address,'amount':amount,'message':message}
-            withdraw_queue.put(transfer)
+
+for deposit_request in deposit_requests:
+    message_id = deposit_request[0]
+    address = deposit_request[1]
+    if address is not None:
+        address = Address(address)
+    message = reddit.inbox.message(message_id)
+    reddit_username = message.author.name
+    deposit = Deposit(reddit_username,message,address)
+    deposit_queue.put(deposit)
+
+for withdraw_request in withdraw_requests:
+    message_id = withdraw_request[0]
+    address = bytearray(withdraw_request[1],'utf-8')
+    amount = withdraw_request[2]
+    message = reddit.inbox.message(message_id)
+    reddit_username = message.author.name
+    withdraw = Withdraw(reddit_username,message,address,amount)
+    withdraw_queue.put(withdraw)
 
 
 print("Bot initalized.")
@@ -286,12 +284,16 @@ while True:
 
             #It's a new message, see what it says
             if message.new:
+                if message.author is None:
+                    continue
                 reddit_username = message.author.name
 
                 #Check if it is a deposit request
                 if bot_api.is_deposit_request(message):
-                    transfer = {'type':'address','reddit_username':reddit_username, 'message':message,'time': time.time()}
-                    deposit_queue.put(transfer)
+                    deposit = Deposit(reddit_username,message)
+                    deposit_queue.put(deposit)
+                    with bot_db_lock:
+                        bot_db.add_deposit_request(deposit)
                     #reply = "Deposits are currently disabled until some issues can be sorted out. Thank you for your patience."
                     #message.reply(reply + message_links)
                     message.mark_read()
@@ -310,7 +312,7 @@ while True:
                             if address:
                                 with bot_db_lock:
                                     bot_db.subtract_balance(reddit_username,amount)
-                                transfer = {'type':'withdraw','reddit_username':reddit_username,'address':address,'message':message,'amount':amount,'time': time.time()}
+                                transfer = Withdraw(reddit_username,message,address,amount)
                                 withdraw_queue.put(transfer)
                                 with bot_db_lock:
                                    bot_db.add_withdraw_request(transfer)
@@ -342,13 +344,17 @@ while True:
                     message.mark_read()
 
                 elif bot_api.is_help_request(message):
-                    reply = "iotaTipBot is a bot that allows reddit users to send iota to each other through reddit comments. The bot commands are as follows:\n\n* 'Deposit' - Initiates the process of depositing iota into your tipping account\n\n* 'Withdraw' - Withdraw iota from your tipping account. You must put the address you want to withdraw to and the amount of iota in the message.\n\n* 'Balance' - Check the amount of iota you have stored in the bot.\n\n* 'Help' - Sends the help message\n\n* 'Donate' - Get a list of options to help support the project.\n\nThese commands are activated by sending the command to the bot either in the subject or the body of the message.\n\nOnce you have iota in your tipping account you can start tipping! To do this simply reply to a comment with a message of the format: '+<amount> iota'\n\nFor example '+25 iota' will tip 25 iota to the author of the comment you replied to. To tip higher values, you can swap the 'iota' part of the comment with 'miota' to tip megaIota values: '+25 miota' will then tip 25 megaIota.\n\nIf you are new to iota and are looking for more information here are a few useful links:\n\n* [Reddit Newcomer Information](https://www.reddit.com/r/Iota/comments/61rc0c/for_newcomers_all_information_links_you_probably/)\n\n* [IOTA Wallet Download](https://github.com/iotaledger/wallet/releases/)\n\n* [Supply and Units Reference](https://i.imgur.com/lsq4610.jpeg)"
-                    message.reply(reply + message_links)
+                    message.reply(help_message + message_links)
                     message.mark_read()
         
                 elif bot_api.is_donation_request(message):
                     reply = "Donations help keep this project alive! They help to cover server costs and development time. If you would like to support this project there are many options! Transfer cryptocurrency to one of the addresses below or simply tip the bot! Thank you for your support!\n\nIOTA: IYFJCTTLRIWUWAUB9ZLCRKVKAAQVWHWTENKVVZBXYUPU9YFTBMKFXYWXWESLWJSTBRADUSGVJPVJZCJEZ9IGYDKDJZ\n\nEthereum: 0x254EBc1863FD4eE5F4469b9A18505aF8de958812\n\nBitcoin: 18VhQTN9QcwJNQwMTb2H2AsvCaGsNfzKNK"
                     message.reply(reply+message_links)
                     message.mark_read()
-    except:
-        print("Message Thread Exception...")
+
+                else:
+                    message.reply(help_message + message_links)
+                    message.mark_read()
+                    
+    except praw.exceptions.APIException:
+        print("Reddit API exception. Restarting...")
