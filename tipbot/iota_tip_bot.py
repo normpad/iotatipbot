@@ -200,8 +200,8 @@ def monitor_comments():
                             comments_replied_to.append(comment.fullname)
                             with bot_db_lock:
                                 bot_db.add_replied_to_comment(comment.fullname)
-        except praw.exceptions.APIException:
-            print("Reddit API exception. Restarting Thread...")
+        except:
+            print("Comment Thread Exception... Restarting...")
 
 
 comment_thread = threading.Thread(target=monitor_comments,args = ())
@@ -355,6 +355,5 @@ while True:
                 else:
                     message.reply(help_message + message_links)
                     message.mark_read()
-                    
-    except praw.exceptions.APIException:
-        print("Reddit API exception. Restarting...")
+    except:
+        print("Message Thread Exception...")
