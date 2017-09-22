@@ -11,6 +11,7 @@ withdraws = 0
 deposits = 0
 completed_deposits = 0
 tip_average = 0
+tip_max = 0
 bot_api = api(fake_seed)
 
 with open('transactionLogs.log','r') as f:
@@ -19,6 +20,8 @@ with open('transactionLogs.log','r') as f:
         if match:
             tips = tips + 1    
             tip_average = tip_average + int(match.group(3))
+            if int(match.group(3)) > tip_max:
+                tip_max = int(match.group(3))
         match = withdraw_string.search(line)
         if match:
             withdraws = withdraws + 1
@@ -31,8 +34,10 @@ with open('transactionLogs.log','r') as f:
 
 tip_average = int(tip_average/tips)
 tip_average_value = bot_api.get_iota_value(tip_average)
+tip_max_value = bot_api.get_iota_value(tip_max)
 completed_deposit_ratio = int((completed_deposits / deposits)*100)
 print('Total tips: {0}'.format(tips))
+print('Biggest tip: {0}(${1})'.format(tip_max,tip_max_value))
 print('Average tip: {0}(${1})'.format(tip_average,tip_average_value))
 print('Total withdraws: {0}'.format(withdraws))
 print('Total deposits requests: {0}'.format(deposits))
