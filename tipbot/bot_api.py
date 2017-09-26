@@ -62,9 +62,10 @@ class api:
                         addr
                     ),
                     value = amount,
+                    tag = Tag(b'IOTATIPBOT')
                 ), 
             ],
-            min_weight_magnitude=15,
+            min_weight_magnitude=14,
             change_address = new_address,
             inputs = self.iota_api.get_inputs(0,index,amount)['inputs']
         )
