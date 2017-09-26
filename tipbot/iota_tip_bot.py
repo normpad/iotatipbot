@@ -140,14 +140,7 @@ def withdraws():
                 address_index = bot_db.get_address_index()
                 new_address = bot_api.get_new_address(address_index)
                 bot_db.add_used_address(address_index,new_address._trytes.decode("utf-8"))
-            transaction = bot_api.send_transfer(address,amount,new_address,address_index)
-            confirmed = False
-            start_time = time.time()
-            while not confirmed:
-                confirmed = bot_api.check_transaction(transaction)
-                if (time.time() - start_time) > (10*60) and not confirmed:
-                    bot_api.replay_bundle(transaction)
-                    start_time = time.time()
+            bot_api.send_transfer(address,amount,new_address,address_index)
             print("Transfer complete.")
             logging.info('{0} withdrew {1} iota to address: {2}'.format(reddit_username,amount,address.decode("utf-8")))
             reply = "You have successfully withdrawn {0} IOTA to address {1}".format(amount,address.decode("utf-8"))

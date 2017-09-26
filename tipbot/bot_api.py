@@ -10,6 +10,7 @@ import urllib.request
 from urllib.error import HTTPError
 import json
 import math
+import time
 
 node_address = config.node_address
 
@@ -52,6 +53,8 @@ class api:
             amount: the amount of iota to send 
             new_address: the address to migrate remaining iota to
             index: the current address index(i.e. the count of all the used addresses)
+        Return:
+            The bundle that was attached to the tangle
         """
 
         ret = self.iota_api.send_transfer(
@@ -69,7 +72,21 @@ class api:
             change_address = new_address,
             inputs = self.iota_api.get_inputs(0,index,amount)['inputs']
         )
-        return ret
+        bundle = ret['bundle'] 
+        confirmed = False
+        start_time = time.time()
+        transactions_to_check = []
+        transactions_to_check.append(bundle.tail_transaction)
+        while not confirmed:
+            for transaction in transactions_to_check:
+                confirmed = self.check_transaction(transaction)
+                if confirmed:
+                    break
+            if (time.time() - start_time) > (30*60) and not confirmed:
+                trytes = self.replay_bundle(transaction)
+                transactions_to_check.append(Transaction.from_tryte_string(trytes[0]))
+                start_time = time.time()
+        return bundle
 
     def get_account_balance(self,index):
         """
@@ -127,10 +144,9 @@ class api:
         """
         Checks if the given transaction is confirmed       
         Parameters:
-            transaction: The transaction to check. Always pass the return of send_transfer()
+            transaction: The transaction to check.
         """
-        
-        transaction_hash = transaction['bundle'].tail_transaction.hash
+        transaction_hash = transaction.hash
         inclusion_states = self.iota_api.get_latest_inclusion([transaction_hash])
         return inclusion_states['states'][transaction_hash]
 
@@ -138,11 +154,11 @@ class api:
         """
         Replays the given bundle
         Parameters:
-            transaction: The transaction to replay. Always pass the return of send_transfer()
+            transaction: The transaction to replay.
         """
 
-        transaction_hash = transaction['bundle'].tail_transaction.hash
-        self.iota_api.replay_bundle(transaction_hash,3,15)
+        transaction_hash = transaction.hash
+        return self.iota_api.replay_bundle(transaction_hash,3,14)
                 
 
     #-------------MESSAGE REGEX FUNCTIONS---------------#
