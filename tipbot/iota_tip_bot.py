@@ -155,7 +155,6 @@ def withdraws():
             with bot_db_lock:
                 bot_db.remove_withdraw_request(withdraw)
             del withdraws[index]
-            time.sleep(300)
 
 withdrawThread = threading.Thread(target=withdraws,args = ())
 withdrawThread.daemon = True
