@@ -33,13 +33,17 @@ message_links = "\n\n[Deposit](https://np.reddit.com/message/compose/?to=iotaTip
 bot_db = Database()
 bot_db_lock = threading.Lock()
 
-#A thread to handle deposits
-#Deposits are handled in 2 phases. 
-#   Phase1: A unique 0 balance address is generated and given to the user
-#   Phase2: The address is checked for a balance, if the address has a balance greater than 0
-#           then the user has deposited to that address and their account should be credited
+
 deposit_queue = queue.Queue()
 def deposits():
+    """
+    A thread to handle deposits
+    Deposits are handled in 2 phases. 
+       Phase1: 
+          A unique 0 balance address is generated and given to the user
+       Phase2: 
+          The address is checked for a balance, if the address has a balance greater than 0 then the user has deposited to that address and their account should be credited
+    """
     bot_api = api(seed)
     deposits = []
     print("Deposit thread started. Waiting for deposits...")
@@ -114,10 +118,13 @@ deposit_thread.daemon = True
 deposit_thread.start()
                 
 
-#This thread handles all withdraw requests
-#Withdraw requests are pulled from the queue and executed one by one
+
 withdraw_queue = queue.Queue()
 def withdraws():
+    """
+    A thread to handle all withdraw requests
+    Withdraw requests are pulled from the queue and executed one by one
+    """
     withdraws = []
     print("Withdraw thread started. Waiting for withdraws...")
     
