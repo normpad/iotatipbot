@@ -7,10 +7,10 @@ import string
 from iota.adapter.wrappers import RoutingWrapper
 import config
 import urllib.request
-from urllib.error import HTTPError
 import json
 import math
 import time
+import requests
 
 node_address = config.node_address
 
@@ -56,24 +56,30 @@ class api:
         Return:
             The bundle that was attached to the tangle
         """
-
-        ret = self.iota_api.send_transfer(
-            depth = 3,
-            transfers = [
-                ProposedTransaction(
-                    address = Address(
-                        addr
-                    ),
-                    value = amount,
-                    tag = Tag(b'IOTATIPBOT')
-                ), 
-            ],
-            min_weight_magnitude=14,
-            change_address = new_address,
-            inputs = self.iota_api.get_inputs(0,index,amount)['inputs']
-        )
+        while True:
+            try:
+              ret = self.iota_api.send_transfer(
+                  depth = 3,
+                  transfers = [
+                      ProposedTransaction(
+                          address = Address(
+                              addr
+                          ),
+                          value = amount,
+                          tag = Tag(b'IOTATIPBOT')
+                      ), 
+                  ],
+                  min_weight_magnitude=14,
+                  change_address = new_address,
+                  inputs = self.iota_api.get_inputs(0,index,amount)['inputs']
+              )
+              break
+            except requests.exceptions.RequestException:
+                print("Error sending transfer... Retrying...")
+            
         bundle = ret['bundle'] 
         confirmed = False
+        transaction_time = time.time()
         start_time = time.time()
         transactions_to_check = []
         transactions_to_check.append(bundle.tail_transaction)
@@ -95,15 +101,19 @@ class api:
             index: the current address index(i.e. the count of all the used addresses)
         """
 
-        #Index must be at least 1
-        if index==0:
-            index=1
-        addresses = self.iota_api.get_new_addresses(0,index)['addresses']
-        balances = self.iota_api.get_balances(addresses)['balances']
-        total = 0
-        for balance in balances:
-            total = total + balance
-        return total
+        while True:
+            try:
+              #Index must be at least 1
+              if index==0:
+                  index=1
+              addresses = self.iota_api.get_new_addresses(0,index)['addresses']
+              balances = self.iota_api.get_balances(addresses)['balances']
+              total = 0
+              for balance in balances:
+                  total = total + balance
+              return total
+            except requests.exceptions.RequestException:
+                pass
     
     def get_balance(self,address):
         """
@@ -113,8 +123,12 @@ class api:
             address: the address to get the balance of
         """
 
-        address_data = self.iota_api.get_balances([address])
-        return address_data['balances'][0]
+        while True:
+            try:
+                address_data = self.iota_api.get_balances([address])
+                return address_data['balances'][0]
+            except requests.exceptions.RequestException:
+                pass
 
 
     def get_new_address(self,index):
@@ -146,9 +160,14 @@ class api:
         Parameters:
             transaction: The transaction to check.
         """
-        transaction_hash = transaction.hash
-        inclusion_states = self.iota_api.get_latest_inclusion([transaction_hash])
-        return inclusion_states['states'][transaction_hash]
+        
+        while True:
+            try:
+                transaction_hash = transaction.hash
+                inclusion_states = self.iota_api.get_latest_inclusion([transaction_hash])
+                return inclusion_states['states'][transaction_hash]
+            except requests.exceptions.RequestException:
+                pass
 
     def replay_bundle(self,transaction):
         """
@@ -157,9 +176,12 @@ class api:
             transaction: The transaction to replay.
         """
 
-        transaction_hash = transaction.hash
-        return self.iota_api.replay_bundle(transaction_hash,3,14)
-                
+        while True:
+            try:
+                transaction_hash = transaction.hash
+                return self.iota_api.replay_bundle(transaction_hash,3,14)
+            except requests.exceptions.RequestException:
+                pass
 
     #-------------MESSAGE REGEX FUNCTIONS---------------#
 
