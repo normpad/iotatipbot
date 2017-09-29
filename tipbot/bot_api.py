@@ -179,7 +179,7 @@ class api:
         while True:
             try:
                 transaction_hash = transaction.hash
-                return self.iota_api.replay_bundle(transaction_hash,3,14)
+                return self.iota_api.replay_bundle(transaction_hash,3,14)['trytes']
             except requests.exceptions.RequestException:
                 pass
 
