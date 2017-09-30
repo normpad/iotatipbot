@@ -45,6 +45,7 @@ def deposits():
           The address is checked for a balance, if the address has a balance greater than 0 then the user has deposited to that address and their account should be credited
     """
     bot_api = api(seed)
+    deposit_timeout = (24*60*60)
     deposits = []
     print("Deposit thread started. Waiting for deposits...")
 
@@ -76,7 +77,7 @@ def deposits():
                         if bot_api.get_balance(address) == 0:
                             break
                     
-                reply = "Please transfer your IOTA to this address:\n{0}\n\nDo not deposit to the same address more than once. This address will expire in 5 hours".format(address._trytes.decode("utf-8"))
+                reply = "Please transfer your IOTA to this address:\n{0}\n\nDo not deposit to the same address more than once. This address will expire in 24 hours".format(address._trytes.decode("utf-8"))
                 logging.info('{0} was assigned to address {1}'.format(reddit_username,address._trytes.decode("utf-8")))
                 message.reply(reply + message_links)
                 with bot_db_lock:
@@ -90,7 +91,7 @@ def deposits():
                 deposit_time = deposit.deposit_time
 
                 #Check if the deposit request has expired
-                if (time.time() - deposit_time) > 18000:
+                if (time.time() - deposit_time) > deposit_timeout:
                     reply = ('Your deposit request has timed out. Please start a new deposit. Do not transfer to the previous address.')
                     message.reply(reply+message_links)
                     with bot_db_lock:
