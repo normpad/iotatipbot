@@ -171,7 +171,7 @@ def monitor_comments():
     while True:
         try:
             for comment in subreddit.stream.comments():
-                if not comment.fullname in comments_replied_to:
+                if not bot_api.is_mention(comment) and not comment.fullname in comments_replied_to:
                     author = comment.author.name
                     if bot_api.is_tip(comment):
                         amount = bot_api.get_iota_tip_amount(comment)
@@ -275,7 +275,44 @@ print("Bot initalized.")
 #Main loop, Check through messages and comments for requests
 while True:
     time.sleep(1)
+    with bot_db_lock:
+        comments_replied_to = bot_db.get_comments_replied_to()
     try:
+        for comment in reddit.inbox.mentions():
+            #print(mention.author)
+            #print(mention.subject)
+            #print(mention.body)
+            if comment.new:
+                if not comment.fullname in comments_replied_to:
+                    author = comment.author.name
+                    if bot_api.is_tip(comment):
+                        amount = bot_api.get_iota_tip_amount(comment)
+                        with bot_db_lock:
+                            valid = bot_db.check_balance(author,amount)
+                        if valid:
+                            parent_comment = comment.parent()
+                            if parent_comment.author is None:
+                                continue
+                            recipient = parent_comment.author.name
+                            with bot_db_lock:
+                                bot_db.subtract_balance(author,amount)
+                                bot_db.add_balance(recipient,amount)
+                            print('Username Mention: {0} tipped {1}'.format(author,recipient))
+                            logging.info('{0} has tipped {1} {2} iota'.format(author,recipient,amount))
+                            value = bot_api.get_iota_value(amount)
+                            reply = "You have successfully tipped {0} {1} iota(${2}).".format(recipient,amount,'%f' % value)
+                            comment.reply(reply + message_links)
+                            comments_replied_to.append(comment.fullname)
+                            with bot_db_lock:
+                                bot_db.add_replied_to_comment(comment.fullname)
+                            parent_comment.author.message("You have received a tip!","You received a tip of {0} iota from {1}".format(amount,author))
+                        else:
+                            reply = "You do not have the required funds."
+                            comment.reply(reply + message_links)
+                            comments_replied_to.append(comment.fullname)
+                            with bot_db_lock:
+                                bot_db.add_replied_to_comment(comment.fullname)
+
         for message in reddit.inbox.messages():
             #print(message.author)
             #print(message.subject)
