@@ -287,20 +287,49 @@ while True:
                 if message.author is None:
                     continue
                 reddit_username = message.author.name
-
+                
                 #Check if it is a deposit request
                 if bot_api.is_deposit_request(message):
+                
+                    #Check if user already has a deposit request
+                    has_pending_deposit = False
+                    with bot_db_lock:
+                        deposit_requests = bot_db.get_deposit_requests()
+                    for deposit_request in deposit_requests:
+                        message_id = deposit_request[0]
+                        if reddit.inbox.message(message_id).author.name == reddit_username:
+                            has_pending_deposit = True
+                            break
+                    if has_pending_deposit:
+                        reply = 'You already have a deposit in progress. Please deposit to the address from the previous message or wait for it to expire.'
+                        message.reply(reply + message_links)
+                        message.mark_read()
+                        continue
+                        
                     deposit = Deposit(reddit_username,message)
                     deposit_queue.put(deposit)
                     with bot_db_lock:
                         bot_db.add_deposit_request(deposit)
-                    #reply = "Deposits are currently disabled until some issues can be sorted out. Thank you for your patience."
-                    #message.reply(reply + message_links)
                     message.mark_read()
 
                 #Check if it is a withdraw request
                 elif bot_api.is_withdraw_request(message):
 
+                    #Check if user already has a withdraw request
+                    has_pending_withdraw = False
+                    with bot_db_lock:
+                        withdraw_requests = bot_db.get_withdraw_requests()
+                    for withdraw_request in withdraw_requests:
+                        message_id = withdraw_request[0]
+                        if reddit.inbox.message(message_id).author.name == reddit_username:
+                            has_pending_withdraw = True
+                            break
+                    if has_pending_withdraw:
+                        reply = 'You already have a withdraw pending. Please wait for that withdraw to finish before making another.'
+                        message.reply(reply + message_links)
+                        message.mark_read()
+                        continue
+                    
                     #Check how much they want to withdrawl
                     if bot_api.contains_iota_amount(message):
                         amount = bot_api.get_iota_amount(message)
