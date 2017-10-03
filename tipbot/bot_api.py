@@ -56,8 +56,19 @@ class api:
         Return:
             The bundle that was attached to the tangle
         """
+        
         while True:
             try:
+            
+              #find starting index
+              used_addresses = self.iota_api.get_new_addresses(0,index)['addresses']
+              balances = self.iota_api.get_balances(used_addresses)['balances']
+              starting_index = 0
+              for i in range(0,len(balances)):
+                if balances[i] != 0:
+                  starting_index = i
+                  break
+                  
               ret = self.iota_api.send_transfer(
                   depth = 3,
                   transfers = [
@@ -71,7 +82,7 @@ class api:
                   ],
                   min_weight_magnitude=14,
                   change_address = new_address,
-                  inputs = self.iota_api.get_inputs(0,index,amount)['inputs']
+                  inputs = self.iota_api.get_inputs(starting_index,index,amount)['inputs']
               )
               break
             except requests.exceptions.RequestException:
