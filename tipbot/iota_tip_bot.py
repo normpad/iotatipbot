@@ -283,6 +283,7 @@ while True:
             #print(mention.subject)
             #print(mention.body)
             if comment.new:
+                comment.mark_read()
                 if not comment.fullname in comments_replied_to:
                     author = comment.author.name
                     if bot_api.is_tip(comment):
