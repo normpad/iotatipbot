@@ -352,7 +352,10 @@ class api:
         text = comment.body
         match = tip_string.search(text)
         if match:
-            return True
+            if self.get_iota_tip_amount(comment) == 0:
+                return False
+            else:
+                return True
         return False
 
     def is_donation_request(self,message):
