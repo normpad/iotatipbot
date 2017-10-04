@@ -182,17 +182,17 @@ def monitor_comments():
                             if parent_comment.author is None:
                                 continue
                             recipient = parent_comment.author.name
+                            value = bot_api.get_iota_value(amount)
+                            reply = "You have successfully tipped {0} {1} iota(${2}).".format(recipient,amount,'%f' % value)
+                            comment.reply(reply + message_links)
+                            parent_comment.author.message("You have received a tip!","You received a tip of {0} iota from {1}".format(amount,author))
+                            print('Comment Thread: {0} tipped {1}'.format(author,recipient))
+                            logging.info('{0} has tipped {1} {2} iota'.format(author,recipient,amount))
                             with bot_db_lock:
                                 bot_db.subtract_balance(author,amount)
                                 bot_db.add_balance(recipient,amount)
                                 bot_db.add_replied_to_comment(comment.fullname)
-                            print('Comment Thread: {0} tipped {1}'.format(author,recipient))
-                            logging.info('{0} has tipped {1} {2} iota'.format(author,recipient,amount))
-                            value = bot_api.get_iota_value(amount)
-                            reply = "You have successfully tipped {0} {1} iota(${2}).".format(recipient,amount,'%f' % value)
-                            comment.reply(reply + message_links)
                             comments_replied_to.append(comment.fullname)
-                            parent_comment.author.message("You have received a tip!","You received a tip of {0} iota from {1}".format(amount,author))
                         else:
                             reply = "You do not have the required funds."
                             comment.reply(reply + message_links)
@@ -282,7 +282,6 @@ while True:
             #print(mention.subject)
             #print(mention.body)
             if comment.new:
-                comment.mark_read()
                 if not comment.fullname in comments_replied_to:
                     author = comment.author.name
                     if bot_api.is_tip(comment):
@@ -294,18 +293,17 @@ while True:
                             if parent_comment.author is None:
                                 continue
                             recipient = parent_comment.author.name
+                            value = bot_api.get_iota_value(amount)
+                            reply = "You have successfully tipped {0} {1} iota(${2}).".format(recipient,amount,'%f' % value)
+                            comment.reply(reply + message_links)
+                            parent_comment.author.message("You have received a tip!","You received a tip of {0} iota from {1}".format(amount,author))
+                            print('Username Mention: {0} tipped {1}'.format(author,recipient))
+                            logging.info('{0} has tipped {1} {2} iota'.format(author,recipient,amount))
                             with bot_db_lock:
                                 bot_db.subtract_balance(author,amount)
                                 bot_db.add_balance(recipient,amount)
                                 bot_db.add_replied_to_comment(comment.fullname)
-                            print('Username Mention: {0} tipped {1}'.format(author,recipient))
-                            logging.info('{0} has tipped {1} {2} iota'.format(author,recipient,amount))
-                            value = bot_api.get_iota_value(amount)
-                            reply = "You have successfully tipped {0} {1} iota(${2}).".format(recipient,amount,'%f' % value)
-                            comment.reply(reply + message_links)
                             comments_replied_to.append(comment.fullname)
-                            
-                            parent_comment.author.message("You have received a tip!","You received a tip of {0} iota from {1}".format(amount,author))
                         else:
                             reply = "You do not have the required funds."
                             comment.reply(reply + message_links)
