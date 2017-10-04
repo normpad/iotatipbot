@@ -236,7 +236,7 @@ def process_tip(comment):
         logging.info('{0} has tipped {1} {2} iota'.format(author,recipient,amount))   
         parent_comment.author.message("You have received a tip!","You received a tip of {0} iota from {1}".format(amount,author) + message_links)
         reply = "You have successfully tipped {0} {1} iota(${2}).".format(recipient,amount,'%f' % value)
-        if value >= 0.5:
+        if value >= 0.1:
             try:
                 comment.reply(reply + message_links)
             except:
