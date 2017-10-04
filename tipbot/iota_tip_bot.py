@@ -183,23 +183,24 @@ def monitor_comments():
                                 continue
                             recipient = parent_comment.author.name
                             value = bot_api.get_iota_value(amount)
-                            reply = "You have successfully tipped {0} {1} iota(${2}).".format(recipient,amount,'%f' % value)
-                            comment.reply(reply + message_links)
-                            parent_comment.author.message("You have received a tip!","You received a tip of {0} iota from {1}".format(amount,author))
-                            print('Comment Thread: {0} tipped {1}'.format(author,recipient))
-                            logging.info('{0} has tipped {1} {2} iota'.format(author,recipient,amount))
                             with bot_db_lock:
                                 bot_db.subtract_balance(author,amount)
                                 bot_db.add_balance(recipient,amount)
                                 bot_db.add_replied_to_comment(comment.fullname)
-                            comments_replied_to.append(comment.fullname)
+                            comments_replied_to.append(comment.fullname)       
+                            parent_comment.author.message("You have received a tip!","You received a tip of {0} iota from {1}".format(amount,author))
+                            print('Comment Thread: {0} tipped {1}'.format(author,recipient))
+                            logging.info('{0} has tipped {1} {2} iota'.format(author,recipient,amount))
+                            reply = "You have successfully tipped {0} {1} iota(${2}).".format(recipient,amount,'%f' % value)
+                            comment.reply(reply + message_links)
                         else:
                             reply = "You do not have the required funds."
                             comment.reply(reply + message_links)
                             comments_replied_to.append(comment.fullname)
                             with bot_db_lock:
                                 bot_db.add_replied_to_comment(comment.fullname)
-        except:
+        except Exception as e:
+            print(e)
             print("Comment Thread Exception... Restarting...")
 
 
@@ -294,16 +295,16 @@ while True:
                                 continue
                             recipient = parent_comment.author.name
                             value = bot_api.get_iota_value(amount)
-                            reply = "You have successfully tipped {0} {1} iota(${2}).".format(recipient,amount,'%f' % value)
-                            comment.reply(reply + message_links)
-                            parent_comment.author.message("You have received a tip!","You received a tip of {0} iota from {1}".format(amount,author))
-                            print('Username Mention: {0} tipped {1}'.format(author,recipient))
-                            logging.info('{0} has tipped {1} {2} iota'.format(author,recipient,amount))
                             with bot_db_lock:
                                 bot_db.subtract_balance(author,amount)
                                 bot_db.add_balance(recipient,amount)
                                 bot_db.add_replied_to_comment(comment.fullname)
                             comments_replied_to.append(comment.fullname)
+                            parent_comment.author.message("You have received a tip!","You received a tip of {0} iota from {1}".format(amount,author))
+                            print('Username Mention: {0} tipped {1}'.format(author,recipient))
+                            logging.info('{0} has tipped {1} {2} iota'.format(author,recipient,amount))
+                            reply = "You have successfully tipped {0} {1} iota(${2}).".format(recipient,amount,'%f' % value)
+                            comment.reply(reply + message_links)
                         else:
                             reply = "You do not have the required funds."
                             comment.reply(reply + message_links)
@@ -419,5 +420,6 @@ while True:
                 else:
                     message.reply(help_message + message_links)
                     message.mark_read()
-    except:
+    except Exception as e:
+        print(e)
         print("Message Thread Exception...")
