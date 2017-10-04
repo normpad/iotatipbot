@@ -28,11 +28,10 @@ logging.basicConfig(filename='transactionLogs.log',format='%(levelname)s: %(asct
 
 #Message links to be appended to every message/comment reply
 help_message = "iotaTipBot is a bot that allows reddit users to send iota to each other through reddit comments. The bot commands are as follows:\n\n* 'Deposit' - Initiates the process of depositing iota into your tipping account\n\n* 'Withdraw' - Withdraw iota from your tipping account. You must put the address you want to withdraw to and the amount of iota in the message.\n\n* 'Balance' - Check the amount of iota you have stored in the bot.\n\n* 'Help' - Sends the help message\n\n* 'Donate' - Get a list of options to help support the project.\n\nThese commands are activated by sending the command to the bot either in the subject or the body of the message.\n\nOnce you have iota in your tipping account you can start tipping! To do this simply reply to a comment with a message of the format: '+<amount> iota'\n\nFor example '+25 iota' will tip 25 iota to the author of the comment you replied to. To tip higher values, you can swap the 'iota' part of the comment with 'miota' to tip megaIota values: '+25 miota' will then tip 25 megaIota.\n\nIf you are new to iota and are looking for more information here are a few useful links:\n\n* [Reddit Newcomer Information](https://www.reddit.com/r/Iota/comments/61rc0c/for_newcomers_all_information_links_you_probably/)\n\n* [IOTA Wallet Download](https://github.com/iotaledger/wallet/releases/)\n\n* [Supply and Units Reference](https://i.imgur.com/lsq4610.jpeg)"
-message_links = "\n\n[Deposit](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Deposit&message=Deposit iota!) | [Withdraw](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Withdraw&message=I want to withdraw my iota!\nxxx iota \naddress here) | [Balance](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Balance&message=I want to check my balance!) | [Help](https://www.reddit.com/r/iotaTipBot/wiki/index) | [Donate](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Donate&message=I want to support iotaTipBot!) | [What is IOTA?](https://www.youtube.com/watch?v=LyVLq13WfsE)\n"
+message_links = "\n\n[Deposit](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Deposit&message=Deposit iota!) | [Withdraw](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Withdraw&message=I want to withdraw my iota!\n<amount> iota \n<address here>) | [Balance](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Balance&message=I want to check my balance!) | [Help](https://www.reddit.com/r/iotaTipBot/wiki/index) | [Donate](https://np.reddit.com/message/compose/?to=iotaTipBot&subject=Donate&message=I want to support iotaTipBot!) | [What is IOTA?](https://www.youtube.com/watch?v=LyVLq13WfsE)\n"
 
 bot_db = Database()
 bot_db_lock = threading.Lock()
-
 
 deposit_queue = queue.Queue()
 def deposits():
@@ -172,36 +171,12 @@ def monitor_comments():
         try:
             for comment in subreddit.stream.comments():
                 if not bot_api.is_mention(comment) and not comment.fullname in comments_replied_to:
-                    author = comment.author.name
                     if bot_api.is_tip(comment):
-                        amount = bot_api.get_iota_tip_amount(comment)
-                        with bot_db_lock:
-                            valid = bot_db.check_balance(author,amount)
-                        if valid:
-                            parent_comment = comment.parent()
-                            if parent_comment.author is None:
-                                continue
-                            recipient = parent_comment.author.name
-                            value = bot_api.get_iota_value(amount)
-                            with bot_db_lock:
-                                bot_db.subtract_balance(author,amount)
-                                bot_db.add_balance(recipient,amount)
-                                bot_db.add_replied_to_comment(comment.fullname)
-                            comments_replied_to.append(comment.fullname)       
-                            parent_comment.author.message("You have received a tip!","You received a tip of {0} iota from {1}".format(amount,author))
-                            print('Comment Thread: {0} tipped {1}'.format(author,recipient))
-                            logging.info('{0} has tipped {1} {2} iota'.format(author,recipient,amount))
-                            reply = "You have successfully tipped {0} {1} iota(${2}).".format(recipient,amount,'%f' % value)
-                            comment.reply(reply + message_links)
-                        else:
-                            reply = "You do not have the required funds."
-                            comment.reply(reply + message_links)
-                            comments_replied_to.append(comment.fullname)
-                            with bot_db_lock:
-                                bot_db.add_replied_to_comment(comment.fullname)
+                        comments_replied_to.append(comment.fullname)
+                        process_tip(comment)
         except Exception as e:
             print(e)
-            print("Comment Thread Exception... Restarting...")
+            print("Comment thread exception... restarting...")
 
 
 comment_thread = threading.Thread(target=monitor_comments,args = ())
@@ -242,9 +217,39 @@ periodic_check_thread = threading.Thread(target=periodic_check, args = ())
 periodic_check_thread.daemon = True
 periodic_check_thread.start()
 
-print("Message thread started. Waiting for messages...")
-
-
+def process_tip(comment):
+    author = comment.author.name
+    amount = bot_api.get_iota_tip_amount(comment)
+    with bot_db_lock:
+        valid = bot_db.check_balance(author,amount)
+    if valid:
+        parent_comment = comment.parent()
+        if parent_comment.author is None:
+            return
+        recipient = parent_comment.author.name
+        value = bot_api.get_iota_value(amount)
+        with bot_db_lock:
+            bot_db.subtract_balance(author,amount)
+            bot_db.add_balance(recipient,amount)
+            bot_db.add_replied_to_comment(comment.fullname)
+        print('Comment Thread: {0} tipped {1}'.format(author,recipient))
+        logging.info('{0} has tipped {1} {2} iota'.format(author,recipient,amount))   
+        parent_comment.author.message("You have received a tip!","You received a tip of {0} iota from {1}".format(amount,author))
+        reply = "You have successfully tipped {0} {1} iota(${2}).".format(recipient,amount,'%f' % value)
+        if value >= 0.5:
+            try:
+                comment.reply(reply + message_links)
+            except:
+                reply = reply + " The bot was unable to respond in the subreddit probably due to low karma. If you would like to see the bot in this subreddit please upvote."
+                comment.author.message("Tip Successful", reply + message_links)
+        else:
+            comment.author.message("Tip Successful", reply + message_links)
+    else:
+        with bot_db_lock:
+            bot_db.add_replied_to_comment(comment.fullname)
+            author_balance = bot_db.get_user_balance(author)
+        comment.author.message("Insufficient Funds", "You do not have the required funds. Your current balance is: {0} iota".format(author_balance))
+            
 #Reinitiate any requests that were not completed
 with bot_db_lock:
     deposit_requests = bot_db.get_deposit_requests()
@@ -269,7 +274,7 @@ for withdraw_request in withdraw_requests:
     withdraw = Withdraw(reddit_username,message,address,amount)
     withdraw_queue.put(withdraw)
 
-
+print("Message thread started. Waiting for messages...")
 print("Bot initalized.")
 
 #Main loop, Check through messages and comments for requests
@@ -284,33 +289,9 @@ while True:
             #print(mention.body)
             if comment.new:
                 if not comment.fullname in comments_replied_to:
-                    author = comment.author.name
                     if bot_api.is_tip(comment):
-                        amount = bot_api.get_iota_tip_amount(comment)
-                        with bot_db_lock:
-                            valid = bot_db.check_balance(author,amount)
-                        if valid:
-                            parent_comment = comment.parent()
-                            if parent_comment.author is None:
-                                continue
-                            recipient = parent_comment.author.name
-                            value = bot_api.get_iota_value(amount)
-                            with bot_db_lock:
-                                bot_db.subtract_balance(author,amount)
-                                bot_db.add_balance(recipient,amount)
-                                bot_db.add_replied_to_comment(comment.fullname)
-                            comments_replied_to.append(comment.fullname)
-                            parent_comment.author.message("You have received a tip!","You received a tip of {0} iota from {1}".format(amount,author))
-                            print('Username Mention: {0} tipped {1}'.format(author,recipient))
-                            logging.info('{0} has tipped {1} {2} iota'.format(author,recipient,amount))
-                            reply = "You have successfully tipped {0} {1} iota(${2}).".format(recipient,amount,'%f' % value)
-                            comment.reply(reply + message_links)
-                        else:
-                            reply = "You do not have the required funds."
-                            comment.reply(reply + message_links)
-                            comments_replied_to.append(comment.fullname)
-                            with bot_db_lock:
-                                bot_db.add_replied_to_comment(comment.fullname)
+                        comments_replied_to.append(comment.fullname)
+                        process_tip(comment)
 
         for message in reddit.inbox.messages():
             #print(message.author)
