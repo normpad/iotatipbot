@@ -218,8 +218,12 @@ periodic_check_thread.daemon = True
 periodic_check_thread.start()
 
 def process_tip(comment):
+    if comment.author.name is None:
+        return
     author = comment.author.name
     amount = bot_api.get_iota_tip_amount(comment)
+    if amount is None:
+        return
     with bot_db_lock:
         valid = bot_db.check_balance(author,amount)
     if valid:
