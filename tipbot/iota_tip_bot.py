@@ -238,13 +238,13 @@ def process_tip(comment):
             bot_db.add_replied_to_comment(comment.fullname)
         print('Comment Thread: {0} tipped {1}'.format(author,recipient))
         logging.info('{0} has tipped {1} {2} iota'.format(author,recipient,amount))   
-        parent_comment.author.message("You have received a tip!","You received a tip of {0} iota from {1}".format(amount,author) + message_links)
+        parent_comment.author.message("You have received a tip!","You received a tip of {0} iota (${1}) from {2}".format(amount, value, author) + message_links)
         reply = "You have successfully tipped {0} {1} iota(${2}).".format(recipient,amount,'%f' % value)
         if value >= 0.01:
             try:
                 comment.reply(reply + message_links)
             except:
-                reply = reply + " The bot was unable to respond in the subreddit probably due to low karma. If you would like to see the bot in this subreddit please upvote."
+                reply = reply + " The bot was unable to respond in the subreddit probably due to low karma. If you would like to see the bot in this subreddit please upvote it's comments."
                 comment.author.message("Tip Successful", reply + message_links)
         else:
             comment.author.message("Tip Successful", reply + message_links)
