@@ -236,23 +236,20 @@ def process_tip(comment):
             bot_db.subtract_balance(author,amount)
             bot_db.add_balance(recipient,amount)
             bot_db.add_replied_to_comment(comment.fullname)
+            author_balance = bot_db.get_user_balance(author)
+            author_balance_value = bot_api.get_iota_value(author_balance)
+            recipient_balance = bot_db.get_user_balance(recipient)
+            recipient_balance_value = bot_api.get_iota_value(recipient_balance)
         print('Comment Thread: {0} tipped {1}'.format(author,recipient))
-        logging.info('{0} has tipped {1} {2} iota'.format(author,recipient,amount))   
-        parent_comment.author.message("You have received a tip!","You received a tip of {0} iota (${1}) from {2}".format(amount, value, author) + message_links)
-        reply = "You have successfully tipped {0} {1} iota(${2}).".format(recipient,amount,'%f' % value)
-        if value >= 0.01:
-            try:
-                comment.reply(reply + message_links)
-            except:
-                reply = reply + " The bot was unable to respond in the subreddit probably due to low karma. If you would like to see the bot in this subreddit please upvote it's comments."
-                comment.author.message("Tip Successful", reply + message_links)
-        else:
-            comment.author.message("Tip Successful", reply + message_links)
+        logging.info('{0} has tipped {1} {2} iota'.format(author,recipient,amount))
+        parent_comment.author.message("You have received a tip!","You received a tip of {0} iota (${1}) from {2}.\n\nBalance: {3} iota (${4})".format(amount, '%f' % value, author, recipient_balance, recipient_balance_value) + message_links)
+        comment.author.message("Tip Successful", "You have successfully tipped {0} {1} iota (${2}).\n\nBalance: {3} iota (${4})".format(recipient,amount,'%f' % value, author_balance, author_balance_value) + message_links)
     else:
         with bot_db_lock:
             bot_db.add_replied_to_comment(comment.fullname)
             author_balance = bot_db.get_user_balance(author)
-        comment.author.message("Insufficient Funds", "You do not have the required funds. Your current balance is: {0} iota".format(author_balance))
+            author_balance_value = bot_api.get_iota_value(author_balance)
+        comment.author.message("Insufficient Funds", "You do not have the required funds.\n\nBalance: {0} iota (${1})".format(author_balance, author_balance_value))
             
 #Reinitiate any requests that were not completed
 with bot_db_lock:
