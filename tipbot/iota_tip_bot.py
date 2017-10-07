@@ -238,8 +238,8 @@ def process_tip(comment):
             bot_db.add_replied_to_comment(comment.fullname)
         print('Comment Thread: {0} tipped {1}'.format(author,recipient))
         logging.info('{0} has tipped {1} {2} iota'.format(author,recipient,amount))   
-        parent_comment.author.message("You have received a tip!","You received a tip of {0} iota (${1}) from {2}".format(amount, value, author) + message_links)
-        reply = "You have successfully tipped {0} {1} iota(${2}).".format(recipient,amount,'%f' % value)
+        parent_comment.author.message("You have received a tip!","You received a tip of {0} iota (${1}) from {2}".format(format(int(amount),",d"), '%f' % value, author) + message_links)
+        reply = "You have successfully tipped {0} {1} iota(${2}).".format(recipient,format(int(amount),",d"),'%f' % value)
         if value >= 0.01:
             try:
                 comment.reply(reply + message_links)
