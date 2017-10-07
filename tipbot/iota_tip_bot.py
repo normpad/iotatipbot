@@ -389,7 +389,7 @@ while True:
                 elif bot_api.is_balance_request(message):
                     with bot_db_lock:
                         balance = bot_db.get_user_balance(reddit_username)
-                    reply = "Your current balance is: {0} iota.".format(balance)
+                    reply = "Your current balance is: {:,d} iota.".format(balance)
                     message.reply(reply + message_links)
                     message.mark_read()
 
