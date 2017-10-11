@@ -70,23 +70,29 @@ class api:
         """
         
         while True:
-            try:             
-              ret = self.iota_api.send_transfer(
-                  depth = 3,
-                  transfers = [
-                      ProposedTransaction(
-                          address = Address(
-                              addr
-                          ),
-                          value = amount,
-                          tag = Tag(b'IOTATIPBOT')
-                      ), 
-                  ],
-                  min_weight_magnitude=14,
-                  change_address = new_address,
-                  inputs = self.iota_api.get_inputs(self.starting_input,index,amount)['inputs']
-              )
-              break
+            try:  
+                for i in range(self.starting_input + 1, index):
+                    try:
+                        input = self.iota_api.get_inputs(self.starting_input,i,amount)['inputs']
+                        break
+                    except iota.adapter.BadApiResponse:
+                        pass
+                ret = self.iota_api.send_transfer(
+                    depth = 3,
+                    transfers = [
+                        ProposedTransaction(
+                            address = Address(
+                                addr
+                            ),
+                            value = amount,
+                            tag = Tag(b'IOTATIPBOT')
+                        ), 
+                    ],
+                    min_weight_magnitude=14,
+                    change_address = new_address,
+                    inputs = input
+                )
+                break
             except requests.exceptions.RequestException:
                 print("Error sending transfer... Retrying...")
             
