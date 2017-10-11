@@ -105,15 +105,13 @@ class api:
                 trytes = self.replay_bundle(transaction)
                 transactions_to_check.append(Transaction.from_tryte_string(trytes[0]))
                 start_time = time.time()
-           
-        #Update starting input
-        address_index = Database().get_address_index()
-        used_addresses = self.iota_api.get_new_addresses(self.starting_input,address_index)['addresses']
-        balances = self.iota_api.get_balances(used_addresses)['balances']
-        for i in range(0,len(balances)):
-          if balances[i] != 0:
-            self.starting_input = i
-            break
+        
+        #Increment the starting input by the number of inputs used
+        num_inputs = 0
+        for t in bundle.__iter__():
+            if t.value < 0:
+                num_inputs = num_inputs + 1
+        self.starting_input = self.starting_input + num_inputs
         return bundle
 
     def get_account_balance(self,index):
