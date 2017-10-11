@@ -43,7 +43,7 @@ def deposits():
        Phase2: 
           The address is checked for a balance, if the address has a balance greater than 0 then the user has deposited to that address and their account should be credited
     """
-    bot_api = api(seed)
+    
     deposit_timeout = (24*60*60)
     deposits = []
     print("Deposit thread started. Waiting for deposits...")
@@ -163,7 +163,6 @@ withdrawThread.start()
 subreddit = reddit.subreddit(config.subreddits)
 #Monitor all subreddit comments for tips
 def monitor_comments():
-    bot_api = api(seed)
     with bot_db_lock:
         comments_replied_to = bot_db.get_comments_replied_to()
     print("Comment thread started. Waiting for comments...")
@@ -186,7 +185,6 @@ comment_thread.start()
 def periodic_check():
     print("Periodic Check thread started")
     while True:
-        bot_api = api(seed)
         with bot_db_lock:
             total_balance = bot_db.get_total_balance()
             address_index = bot_db.get_address_index()
