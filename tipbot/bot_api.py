@@ -23,9 +23,21 @@ class api:
         Parameters:
             seed: The account seed
         """
+        
         self.iota_api = Iota(
             RoutingWrapper(node_address)
                 .add_route('attachToTangle','http://localhost:14265'),seed)
+                      
+        #Find the first address with non-zero balance
+        self.starting_input = 0
+        address_index = Database().get_address_index()
+        if address_index != 0:
+          used_addresses = self.iota_api.get_new_addresses(0,address_index)['addresses']
+          balances = self.iota_api.get_balances(used_addresses)['balances']
+          for i in range(0,len(balances)):
+            if balances[i] != 0:
+              self.starting_input = i
+              break
 
     def get_iota_value(self,amount):
         """
@@ -58,17 +70,7 @@ class api:
         """
         
         while True:
-            try:
-            
-              #find starting index
-              used_addresses = self.iota_api.get_new_addresses(0,index)['addresses']
-              balances = self.iota_api.get_balances(used_addresses)['balances']
-              starting_index = 0
-              for i in range(0,len(balances)):
-                if balances[i] != 0:
-                  starting_index = i
-                  break
-                  
+            try:             
               ret = self.iota_api.send_transfer(
                   depth = 3,
                   transfers = [
@@ -82,7 +84,7 @@ class api:
                   ],
                   min_weight_magnitude=14,
                   change_address = new_address,
-                  inputs = self.iota_api.get_inputs(starting_index,index,amount)['inputs']
+                  inputs = self.iota_api.get_inputs(self.starting_input,index,amount)['inputs']
               )
               break
             except requests.exceptions.RequestException:
@@ -103,6 +105,15 @@ class api:
                 trytes = self.replay_bundle(transaction)
                 transactions_to_check.append(Transaction.from_tryte_string(trytes[0]))
                 start_time = time.time()
+           
+        #Update starting input
+        address_index = Database().get_address_index()
+        used_addresses = self.iota_api.get_new_addresses(self.starting_input,address_index)['addresses']
+        balances = self.iota_api.get_balances(used_addresses)['balances']
+        for i in range(0,len(balances)):
+          if balances[i] != 0:
+            self.starting_input = i
+            break
         return bundle
 
     def get_account_balance(self,index):
@@ -117,7 +128,7 @@ class api:
               #Index must be at least 1
               if index==0:
                   index=1
-              addresses = self.iota_api.get_new_addresses(0,index)['addresses']
+              addresses = self.iota_api.get_new_addresses(self.starting_input,index)['addresses']
               balances = self.iota_api.get_balances(addresses)['balances']
               total = 0
               for balance in balances:
