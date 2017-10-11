@@ -209,7 +209,7 @@ def periodic_check():
         for address in used_addresses:
             if address_list.count(address[1]) > 1:
                 print("Periodic Check Thread: Duplicated address: {0} index {1}".format(address[1],address[0]))
-        time.sleep(1800)
+        time.sleep(7200)
 
 periodic_check_thread = threading.Thread(target=periodic_check, args = ())
 periodic_check_thread.daemon = True
