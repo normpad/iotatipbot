@@ -352,6 +352,11 @@ while True:
                     #Check how much they want to withdrawl
                     if bot_api.contains_iota_amount(message):
                         amount = bot_api.get_iota_amount(message)
+                        if amount == 0:
+                            reply = 'Please include an iota amount greater than 0 in your withdraw request'
+                            message.reply(reply + message_links)
+                            message.mark_read()
+                            continue
                         with bot_db_lock:
                             valid = bot_db.check_balance(reddit_username,amount)
                         if valid:
