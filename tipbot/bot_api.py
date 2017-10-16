@@ -109,7 +109,7 @@ class api:
                 if confirmed:
                     break
             if (time.time() - start_time) > (30*60) and not confirmed:
-                if reattaches = 2:
+                if reattaches == 2:
                     return None
                 trytes = self.replay_bundle(transaction)
                 transactions_to_check.append(Transaction.from_tryte_string(trytes[0]))
