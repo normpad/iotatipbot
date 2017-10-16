@@ -147,16 +147,7 @@ def withdraws():
                 address_index = bot_db.get_address_index()
                 new_address = bot_api.get_new_address(address_index)
                 bot_db.add_used_address(address_index,new_address._trytes.decode("utf-8"))
-            bundle = bot_api.send_transfer(address,amount,new_address,address_index)
-            if bundle is None:
-                reply = "Your withdraw could not be processed. Your iota has been credited back to your account. Please try withdrawing again. Sorry for the inconvenience."
-                with bot_db_lock:
-                    bot_db.remove_withdraw_request(withdraw)
-                del withdraws[index]
-                message.reply(reply + message_links)
-                logging.info('{0} withdraw to address {1} could not be completed.'.format(reddit_username,address.decode("utf-8")))
-                bot_api.add_balance(reddit_username,amount)
-                continue
+            bot_api.send_transfer(address,amount,new_address,address_index)
             print("Transfer complete.")
             logging.info('{0} withdrew {1} iota to address: {2}'.format(reddit_username,amount,address.decode("utf-8")))
             reply = "You have successfully withdrawn {0} IOTA to address {1}".format(amount,address.decode("utf-8"))
