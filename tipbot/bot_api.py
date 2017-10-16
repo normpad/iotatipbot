@@ -98,6 +98,7 @@ class api:
             
         bundle = ret['bundle'] 
         confirmed = False
+        reattaches = 0
         transaction_time = time.time()
         start_time = time.time()
         transactions_to_check = []
@@ -108,9 +109,12 @@ class api:
                 if confirmed:
                     break
             if (time.time() - start_time) > (30*60) and not confirmed:
+                if reattaches = 2:
+                    return None
                 trytes = self.replay_bundle(transaction)
                 transactions_to_check.append(Transaction.from_tryte_string(trytes[0]))
                 start_time = time.time()
+                reattaches = reattaches + 1
         
         #Increment the starting input by the number of inputs used
         num_inputs = 0
