@@ -107,7 +107,7 @@ class api:
                 confirmed = self.check_transaction(transaction)
                 if confirmed:
                     break
-            if (time.time() - start_time) > (10*60) and not confirmed:
+            if (time.time() - start_time) > (30*60) and not confirmed:
                 trytes = self.replay_bundle(transaction)
                 transactions_to_check.append(Transaction.from_tryte_string(trytes[0]))
                 start_time = time.time()
