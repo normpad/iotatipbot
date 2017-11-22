@@ -71,12 +71,18 @@ class api:
         
         while True:
             try:  
-                for i in range(self.starting_input + 1, index):
-                    try:
-                        input = self.iota_api.get_inputs(self.starting_input,i,amount)['inputs']
-                        break
-                    except iota.adapter.BadApiResponse:
-                        pass
+                inputs = []
+                inputs_total = 0
+                for i in range(self.starting_input, index):
+                    input_addr = self.iota_api.get_new_addresses(i,1)['addresses'][0]
+                    input_addr_balance = self.get_balance(input_addr)
+                    if input_addr_balance != 0:
+                        inputs = inputs + [input_addr]
+                        inputs_total = inputs_total + input_addr_balance
+                        print('Found input. Balance amount: {0}'.format(input_addr_balance))
+                        if inputs_total >= amount:
+                            print('Inputs found. Total: {0}'.format(inputs_total))
+                            break
                 ret = self.iota_api.send_transfer(
                     depth = 3,
                     transfers = [
