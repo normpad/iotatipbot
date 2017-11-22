@@ -151,7 +151,7 @@ class api:
 
         while True:
             try:
-                address_data = self.iota_api.get_balances([address])
+                address_data = self.iota_api.get_balances([address.address])
                 return address_data['balances'][0]
             except requests.exceptions.RequestException:
                 pass
