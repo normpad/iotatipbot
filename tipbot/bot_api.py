@@ -96,7 +96,7 @@ class api:
                     ],
                     min_weight_magnitude=14,
                     change_address = new_address,
-                    inputs = input
+                    inputs = inputs
                 )
                 break
             except requests.exceptions.RequestException:
