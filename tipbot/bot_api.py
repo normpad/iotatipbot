@@ -139,7 +139,9 @@ class api:
               if index==0:
                   index=1
               addresses = self.iota_api.get_new_addresses(self.starting_input,index)['addresses']
-              balances = self.iota_api.get_balances(addresses)['balances']
+              balances = []
+              for i in range(0,len(addresses),500): 
+                balances = balances + self.iota_api.get_balances(addresses[i:i+500])['balances']
               total = 0
               for balance in balances:
                   total = total + balance
