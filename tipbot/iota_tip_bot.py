@@ -285,25 +285,26 @@ while True:
     with bot_db_lock:
         comments_replied_to = bot_db.get_comments_replied_to()
     try:
-        for comment in reddit.inbox.mentions():
-            #print(mention.author)
-            #print(mention.subject)
-            #print(mention.body)
-            if comment.new:
-                if not comment.fullname in comments_replied_to:
-                    if bot_api.is_tip(comment):
-                        comments_replied_to.append(comment.fullname)
-                        process_tip(comment)
-
-        for message in reddit.inbox.messages():
-            #print(message.author)
-            #print(message.subject)
-            #print(message.body)
-
+        for message in reddit.inbox.unread(limit=None):
+            #Check for username mentions
+            if isinstance(message,praw.models.Comment):
+                if bot_api.is_mention(message):
+                    if not message.fullname in comments_replied_to:
+                        if bot_api.is_tip(message):
+                            comments_replied_to.append(message.fullname)
+                            process_tip(message)
+                            message.mark_read()
+                        else:
+                            message.mark_read()
+                    else:
+                        message.mark_read()
+                else:
+                    message.mark_read()
 
             #It's a new message, see what it says
-            if message.new:
+            elif isinstance(message,praw.models.Message):
                 if message.author is None:
+                    message.mark_read()
                     continue
                 reddit_username = message.author.name
                 
@@ -408,6 +409,8 @@ while True:
                 else:
                     message.reply(help_message + message_links)
                     message.mark_read()
+            else:
+                message.mark_read()
     except Exception as e:
         print(e)
         print("Message Thread Exception...")
