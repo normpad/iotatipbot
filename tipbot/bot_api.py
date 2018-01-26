@@ -101,8 +101,9 @@ class api:
                     inputs = inputs
                 )
                 break
-            except requests.exceptions.RequestException:
+            except (requests.exceptions.RequestException,BadApiResponse):
                 print("Error sending transfer... Retrying...")
+                time.sleep(10)
             
         bundle = ret['bundle'] 
         confirmed = False
@@ -148,8 +149,9 @@ class api:
               for balance in balances:
                   total = total + balance
               return total
-            except requests.exceptions.RequestException:
-                pass
+            except (requests.exceptions.RequestException,BadApiResponse):
+                print('ERROR: Request exception when trying to get account balance.')
+                time.sleep(10)
     
     def get_balance(self,address):
         """
@@ -163,8 +165,9 @@ class api:
             try:
                 address_data = self.iota_api.get_balances([address.address])
                 return address_data['balances'][0]
-            except requests.exceptions.RequestException:
-                pass
+            except (requests.exceptions.RequestException,BadApiResponse):
+                print('ERROR: Request Exception when trying to get balance.')
+                time.sleep(10)
 
 
     def get_new_address(self,index):
@@ -202,8 +205,8 @@ class api:
                 transaction_hash = transaction.hash
                 inclusion_states = self.iota_api.get_latest_inclusion([transaction_hash])
                 return inclusion_states['states'][transaction_hash]
-            except requests.exceptions.RequestException:
-                pass
+            except (requests.exceptions.RequestException,BadApiResponse):
+                time.sleep(10)
 
     def replay_bundle(self,transaction):
         """
@@ -211,13 +214,13 @@ class api:
         Parameters:
             transaction: The transaction to replay.
         """
-
         while True:
             try:
                 transaction_hash = transaction.hash
                 return self.iota_api.replay_bundle(transaction_hash,3,14)['trytes']
-            except requests.exceptions.RequestException:
-                pass
+            except (requests.exceptions.RequestException,BadApiResponse):
+                print("Unable to replay transaction.")
+                time.sleep(10)
 
     #-------------MESSAGE REGEX FUNCTIONS---------------#
 
