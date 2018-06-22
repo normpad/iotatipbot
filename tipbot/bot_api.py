@@ -29,17 +29,17 @@ class api:
                 .add_route('attachToTangle','http://localhost:14265'),seed)
                       
         #Find the first address with non-zero balance
-        self.starting_input = 0
+        self.starting_input = Database().get_head_index()
         address_index = Database().get_address_index()
         if address_index != 0:
-          used_addresses = self.iota_api.get_new_addresses(0,address_index)['addresses']
-          balances = []
-          for i in range(0,len(used_addresses),500): 
-            balances = balances + self.iota_api.get_balances(used_addresses[i:i+500])['balances']
-          for i in range(0,len(balances)):
-            if balances[i] != 0:
-              self.starting_input = i
-              break
+            for i in range(self.starting_input,address_index):
+                address = self.iota_api.get_new_addresses(self.starting_input,1)['addresses']
+                balance = self.iota_api.get_balances(address)['balances'][0]
+                if balance != 0:
+                    break
+                else:
+                    self.starting_input += 1
+                    Database().incriment_head_index()
 
     def get_iota_value(self,amount):
         """
@@ -127,6 +127,7 @@ class api:
             if t.value < 0:
                 num_inputs = num_inputs + 1
         self.starting_input = self.starting_input + num_inputs
+        Database().set_head_index(self.starting_input)
         return bundle
 
     def get_account_balance(self,index):
@@ -435,6 +436,10 @@ class Database:
         self.conn.commit()
         self.db.execute("CREATE TABLE IF NOT EXISTS withdrawRequests (messageId TEXT PRIMARY KEY, address TEXT, amount INTEGER)")
         self.conn.commit()
+        self.db.execute("CREATE TABLE IF NOT EXISTS indicies (key INTEGER PRIMARY KEY, head INTEGER, tail INTEGER)")
+        self.conn.commit()
+        if len(self.db.execute("SELECT * FROM indicies").fetchall()) == 0:
+            self.db.execute("INSERT INTO indicies (key,head,tail) VALUES (0,0,0)")
 
     def add_new_user(self,reddit_username):
         """
@@ -657,3 +662,42 @@ class Database:
         query = self.db.execute("SELECT * FROM usedAddresses")
         address_index = len(query.fetchall())
         return address_index 
+
+    def set_head_index(self,index):
+        """
+        Sets the head index(i.e. the first non-zero value address)
+        Parameters:
+            index: The index to set the head to
+        """
+        query = self.db.execute("UPDATE indicies SET head=? WHERE key=0",(index,))
+        self.conn.commit()
+
+    def get_head_index(self):
+        """
+        Gets the head index(i.e. the index of the first non-zero value address)
+        """
+        query = self.db.execute("SELECT head FROM indicies WHERE key=0")
+        return query.fetchone()[0]
+
+    def incriment_head_index(self):
+        """
+        Increments the head index(i.e. the index of the first non-zero value address)
+        """
+        self.set_head_index(self.get_head_index()+1)
+
+    def set_tail_index(self,index):
+        """
+        Sets the tail index(i.e. the index of the last non-zero value address)
+        Parameters:
+            index: the index to set the tail to
+        """
+        query = self.db.execute("UPDATE indicies SET tail=? WHERE key=0",(index,))
+        self.conn.commit()
+
+    def get_tail_index(self):
+        """
+        Gets the tail index(i.e. the index of the last non-zero value address)
+        """
+        query = self.db.execute("SELECT tail FROM indicies WHERE key=0")
+        return query.fetchone()[0]
+        
