@@ -859,4 +859,76 @@ class BotUnitTests(unittest.TestCase):
             value = bot_api.get_iota_value(10000)
             print('Value is: ${0}'.format(value))
 
+        """
+        Test set_head_index
+        Sunny 1
+        Preconditions:
+            Database table indecies exists with a single entry with primary key 0
+        Postconditions:
+            indecies.head is set to 1500
+        """
+        def test_set_head_index_sunny_1(self):
+            bot_db = Database('test_db.db')
+            bot_db.set_head_index(1500)
+            self.assertEqual(bot_db.db.execute("SELECT head FROM indicies WHERE key=0").fetchone()[0],1500)
+
+        """
+        Test get_head_index
+        Sunny 1
+        Preconditions:
+            Database table indicies exists with a single entry with primary key 0
+            indicies.head is set to 2500
+        Postconditions:
+            get_head_index returns 2500
+        """
+        def test_get_head_index_sunny_1(self):
+            bot_db = Database('test_db.db')
+            bot_db.db.execute("UPDATE indicies SET head=2500 WHERE key=0")
+            bot_db.conn.commit()
+            self.assertEqual(bot_db.get_head_index(),2500)
+
+        """
+        Test set_tail_index
+        Sunny 1
+        Preconditions:
+            Database table indecies exists with a single entry with primary key 0
+        Postconditions:
+            indecies.tail is set to 3000
+        """
+        def test_set_head_index_sunny_1(self):
+            bot_db = Database('test_db.db')
+            bot_db.set_tail_index(3000)
+            self.assertEqual(bot_db.db.execute("SELECT tail FROM indicies WHERE key=0").fetchone()[0],3000)
+
+        """
+        Test get_tail_index
+        Sunny 1
+        Preconditions:
+            Database table indicies exists with a single entry with primary key 0
+            indicies.tail is set to 7000
+        Postconditions:
+            get_tail_index returns 7000
+        """
+        def test_get_tail_index_sunny_1(self):
+            bot_db = Database('test_db.db')
+            bot_db.db.execute("UPDATE indicies SET tail=7000 WHERE key=0")
+            bot_db.conn.commit()
+            self.assertEqual(bot_db.get_tail_index(),7000)
+
+        """
+        Test incriment_head_index
+        Sunny 1
+        Preconditions:
+            Database table indicies exists with a single entry with primary key 0
+            indicies.head is set to 1400
+        Postconditions:
+            indicies.head is 1401
+        """
+        def test_incriment_head_index_sunny_1(self):
+            bot_db = Database('test_db.db')
+            bot_db.db.execute("UPDATE indicies SET head=1400 WHERE key=0")
+            bot_db.conn.commit()
+            bot_db.incriment_head_index()
+            self.assertEqual(bot_db.db.execute("SELECT head FROM indicies WHERE key=0").fetchone()[0],1401)
+
 unittest.main()
