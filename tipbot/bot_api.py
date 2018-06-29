@@ -127,7 +127,6 @@ class api:
             if t.value < 0:
                 num_inputs = num_inputs + 1
         self.starting_input = self.starting_input + num_inputs
-        Database().set_head_index(self.starting_input)
         return bundle
 
     def get_account_balance(self,index):
