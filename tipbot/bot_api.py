@@ -106,20 +106,20 @@ class api:
                 time.sleep(10)
             
         bundle = ret['bundle'] 
+        transaction = bundle.tail_transaction
         confirmed = False
         transaction_time = time.time()
         start_time = time.time()
-        transactions_to_check = []
-        transactions_to_check.append(bundle.tail_transaction)
         while not confirmed:
-            for transaction in transactions_to_check:
-                confirmed = self.check_transaction(transaction)
-                if confirmed:
-                    break
-            if (time.time() - start_time) > (30*60) and not confirmed:
+            confirmed = self.check_transaction(transaction)
+            if confirmed:
+              break
+            consistent = self.iota_api.check_consistency([transaction.hash])['state']
+            if not consistent:
                 trytes = self.replay_bundle(transaction)
-                transactions_to_check.append(Transaction.from_tryte_string(trytes[0]))
                 start_time = time.time()
+                transaction = Transaction.from_tryte_string(trytes[0])
+            time.sleep(1)
         
         #Increment the starting input by the number of inputs used
         num_inputs = 0
