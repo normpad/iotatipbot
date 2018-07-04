@@ -202,9 +202,9 @@ class api:
         
         while True:
             try:
-                transaction_hash = transaction.hash
-                inclusion_states = self.iota_api.get_latest_inclusion([transaction_hash])
-                return inclusion_states['states'][transaction_hash]
+                hashes = self.iota_api.find_transactions([transaction.bundle_hash])['hashes']
+                inclusion_states = list(self.iota_api.get_latest_inclusion(hashes)['states'].values())
+                return True if True in inclusion_states else False
             except (requests.exceptions.RequestException,BadApiResponse):
                 time.sleep(10)
 

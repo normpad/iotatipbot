@@ -61,6 +61,33 @@ class IotaUnitTests(unittest.TestCase):
             print("Address generated: {0}".format(address))
             self.assertTrue(validChecksum)
 
+        def test_check_transaction(self):
+            """
+            Test check_transaction
+            preconditions:
+                hash1 is confirmed
+                hash2 is not confirmed
+                hash3 is confirmed via reattach
+            postconditions:
+                check_transaction returns true when passed hash1
+                check_transaction returns false when passed hash2
+                check_transaction returns true when passed hash3
+            """
+            hash1 = 'YWDRSAXEKQLBKDUJYRPJAQPH9J9OARUCSBWRDGB9IRLZVEDQWJGNHHZCL9BZ9SLKZHRPZHKBTZFJNZDPX'
+            hash2 = 'PP9CVRCOXAYSBSKF9GKGP9GJDJCAEKFFKOT9BDXHGTHDAGKYVTODHBSKFZCYZKXJKYJXAZJ9XLOEGDH99'
+            hash3 = 'BGFXCCEOZWVHOC9ODI9JA9TDNFFXV9QAISRAQLXDEEBRDITFKPVCKUEMYBIKTXOPEELTV9KFRDIYQEVAC'
+            bot_api = api(test_seed)
+
+            class testTransaction:
+                bundle_hash = hash1
+
+            self.assertTrue(bot_api.check_transaction(testTransaction))
+            testTransaction.bundle_hash = hash2
+            self.assertFalse(bot_api.check_transaction(testTransaction))
+            testTransaction.bundle_hash = hash3
+            self.assertTrue(bot_api.check_transaction(testTransaction))
+            
+
         def test_send_transfer(self):
             """
             Test send_transfer
