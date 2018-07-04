@@ -75,6 +75,7 @@ class api:
             try:  
                 inputs = []
                 inputs_total = 0
+                """
                 for i in range(self.starting_input, index):
                     input_addr = self.iota_api.get_new_addresses(i,1)['addresses'][0]
                     input_addr_balance = self.get_balance(input_addr)
@@ -85,6 +86,7 @@ class api:
                         if inputs_total >= amount:
                             print('Inputs found. Total: {0}'.format(inputs_total))
                             break
+                """
                 ret = self.iota_api.send_transfer(
                     depth = 3,
                     transfers = [
@@ -114,7 +116,7 @@ class api:
             confirmed = self.check_transaction(transaction)
             if confirmed:
               break
-            consistent = self.iota_api.check_consistency([transaction.hash])['state']
+            consistent = self.check_consistency(transaction)
             if not consistent:
                 trytes = self.replay_bundle(transaction)
                 start_time = time.time()
@@ -128,6 +130,21 @@ class api:
                 num_inputs = num_inputs + 1
         self.starting_input = self.starting_input + num_inputs
         return bundle
+
+    def check_consistency(self,transaction):
+        """
+        Wrapper function for iota.check_consistency
+        Returns the consistency of the transaction
+        Parameters:
+            transaction: the transaction to check
+        """
+        transaction_hash = transaction.hash
+        while True:
+            try:
+                return self.iota_api.check_consistency([transaction_hash])['state']
+            except (requests.exceptions.RequestException,BadApiResponse):
+                print("Error checking consistency")
+                time.sleep(10)
 
     def get_account_balance(self,index):
         """
