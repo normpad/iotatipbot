@@ -119,6 +119,8 @@ class api:
                 trytes = self.replay_bundle(transaction)
                 start_time = time.time()
                 transaction = Transaction.from_tryte_string(trytes[0])
+            else:
+                self.promote_transcation(transaction)
             time.sleep(1)
         
         #Increment the starting input by the number of inputs used
@@ -128,6 +130,19 @@ class api:
                 num_inputs = num_inputs + 1
         self.starting_input = self.starting_input + num_inputs
         return bundle
+
+    def promote_transaction(self,transaction):
+        """
+        Wrapper function for iota.promote_transaction
+        Parameters:
+            transaction: The transaction to promote.
+        """
+        while True:
+            try:
+                transaction_hash = transaction.hash
+                return self.iota_api.promote_transaction(transaction_hash,10,14)['bundle']
+            except (requests.exceptions.RequestException,BadApiResponse):
+                print("Unable to promote transaction.")
 
     def check_consistency(self,transaction):
         """
